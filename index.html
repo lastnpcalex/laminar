@@ -1,0 +1,1294 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#000000">
+  <title>LAMINAR &mdash; Relativistic Lighthugger Simulator</title>
+  <meta name="description" content="LAMINAR: 3+ km Conjoiner lighthugger relativistic flight, 3D Keplerian orbital navigator, 50 LY Milky Way starmap, procedural ship architect, sextant Doppler lab, and orbital combat.">
+  <link rel="icon" href="img/favicon.ico">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Share+Tech+Mono&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=VT323&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="shared/css/acidburn.css">
+  <link rel="stylesheet" href="prototypes/lighthugger/lighthugger.css">
+  <script defer src="shared/js-libs/three.min.js"></script>
+  <script defer src="shared/js-libs/jquery-2.1.4.min.js"></script>
+  <script defer src="shared/js-libs/Detector.js"></script>
+  <script defer src="shared/js-libs/ShaderLoader.min.js"></script>
+  <script defer src="shared/js-libs/mustache.min.js"></script>
+  <script defer src="shared/three-js-monkey-patch.js"></script>
+  <script defer src="shared/js/acidburn-mode.js"></script>
+  <script defer src="shared/js/acidburn-galaxy.js"></script>
+  <script defer src="shared/js/acidburn-blackhole.js"></script>
+
+  <!-- Relativistic physics, RNG, Balmer lines, PBR hull maps, & Three.js r160 bundle -->
+  <script defer src="long-patience/app/vendor/three-bundle.js"></script>
+  <script defer src="long-patience/app/js/physics.js"></script>
+  <script defer src="long-patience/app/js/rng.js"></script>
+  <script defer src="long-patience/app/js/hydrogen.js"></script>
+  <script defer src="long-patience/app/js/spectrolab.js"></script>
+  <script defer src="long-patience/app/js/textures.js"></script>
+  <script defer src="long-patience/app/js/lighthugger-mesh.js"></script>
+
+  <!-- Lighthugger modules in dependency order: genome, orbits, style kits (before builder), builder, galaxy, atproto archive, scene, screens, app -->
+  <script defer src="prototypes/lighthugger/lighthugger-genome.js"></script>
+  <script defer src="prototypes/lighthugger/lighthugger-orbits.js"></script>
+  <script defer src="prototypes/lighthugger/lighthugger-orbit3d.js"></script>
+  <script defer src="prototypes/lighthugger/lighthugger-styles-organic.js"></script>
+  <script defer src="prototypes/lighthugger/lighthugger-styles-architect.js"></script>
+  <script defer src="prototypes/lighthugger/lighthugger-builder.js"></script>
+  <script defer src="prototypes/lighthugger/lighthugger-shuttles.js"></script>
+  <script defer src="prototypes/lighthugger/lighthugger-galaxy.js"></script>
+  <script defer src="prototypes/lighthugger/lighthugger-atproto.js"></script>
+  <script defer src="prototypes/lighthugger/lighthugger-audio.js"></script>
+  <script defer src="prototypes/lighthugger/lighthugger-scene.js"></script>
+  <script defer src="prototypes/lighthugger/lighthugger-screens.js"></script>
+  <script defer src="prototypes/lighthugger/lighthugger-app.js"></script>
+</head>
+<body class="lh-page lh-standalone">
+  <a class="skip-link" href="#main">Skip to Laminar helm</a>
+  <div class="static-bg" aria-hidden="true"></div>
+  <div id="blackhole-container" aria-hidden="true"></div>
+
+  <main id="main" class="lh-game-root" data-screen="menu" data-kg="closed" tabindex="-1" aria-label="Lighthugger game">
+    <div id="lh-boot-loader" class="lh-boot-loader" role="status"><strong>KNIGHT KG-2100 // SYSTEM BOOT</strong><p>INITIALIZING CONJOINER TORCH SYSTEMS // BUILDING CHASSIS &amp; 28-STAR EPHEMERIS</p><div class="lh-boot-track"><div></div></div></div>
+    <script>if (window.innerWidth > 680) document.getElementById('main').dataset.kg = 'open'; setTimeout(function () { document.getElementById('lh-boot-loader').classList.add('is-loaded'); }, 12000);</script>
+    <!-- ================= FULL-BLEED 3D WORLD ================= -->
+    <div class="lh-stage" id="stage">
+      <canvas id="lh-scene" class="lh-scene-canvas" tabindex="0" role="img" aria-label="3D Lighthugger, host world, station, and relativistic Milky Way viewport"></canvas>
+      <canvas id="lh-hud-canvas" class="lh-hud-canvas" aria-hidden="true"></canvas>
+      <div id="lh-labels" class="lh-labels" aria-hidden="false"></div>
+      <div class="lh-reticle" id="lh-reticle" aria-hidden="true" hidden>
+        <div class="lh-reticle-inner"></div>
+      </div>
+      <div class="lh-nogl" id="lh-nogl" hidden>
+        3D WebGL viewport unavailable on this device &mdash; the Orbital Navigator, Starmap, Drydock and KG-2100 console remain active.
+      </div>
+    </div>
+
+    <!-- ================= HELM HUD ================= -->
+    <div class="lh-hud" id="lh-hud">
+      <!-- Top-left flight telemetry pill -->
+      <section class="lh-telemetry" id="lh-telemetry" aria-label="Flight telemetry">
+        <div class="lh-tm-head">
+          <strong class="lh-tm-ship" id="lh-tm-ship">LONG PATIENCE</strong>
+          <span class="lh-tm-mode" id="lh-tm-mode" data-mode="docked">DOCKED</span>
+        </div>
+        <p class="lh-tm-where" id="lh-tm-where">SOL &middot; SATURN &middot; TITAN CRYO-SPINDLE</p>
+        <dl class="lh-tm-grid">
+          <div class="lh-tm-cell"><dt id="lh-tm-k1">PE / AP</dt><dd id="lh-tm-v1">&mdash;</dd></div>
+          <div class="lh-tm-cell"><dt id="lh-tm-k2">ALT</dt><dd id="lh-tm-v2">&mdash;</dd></div>
+          <div class="lh-tm-cell"><dt id="lh-tm-k3">V ORB</dt><dd id="lh-tm-v3">&mdash;</dd></div>
+          <div class="lh-tm-cell"><dt>THRUST</dt><dd id="lh-tm-thrust">0.00g</dd></div>
+        </dl>
+        <div class="lh-tm-bars">
+          <div class="lh-tm-bar" title="Conjoiner core thermal load">
+            <span class="lh-tm-bar-k">CORE</span>
+            <span class="lh-tm-meter"><span class="lh-tm-fill is-core" id="lh-tm-core-fill" data-state="nominal"></span></span>
+            <span class="lh-tm-bar-v" id="lh-tm-core">0%</span>
+          </div>
+          <div class="lh-tm-bar" title="Ablative ice shield integrity">
+            <span class="lh-tm-bar-k">ICE</span>
+            <span class="lh-tm-meter"><span class="lh-tm-fill is-ice" id="lh-tm-ice-fill"></span></span>
+            <span class="lh-tm-bar-v" id="lh-tm-ice">100%</span>
+          </div>
+          <div class="lh-tm-bar" title="Structural hull integrity">
+            <span class="lh-tm-bar-k">HULL</span>
+            <span class="lh-tm-meter"><span class="lh-tm-fill is-hull" id="lh-tm-hull-fill" data-state="nominal"></span></span>
+            <span class="lh-tm-bar-v" id="lh-tm-hull">100%</span>
+          </div>
+        </div>
+        <div class="lh-tm-thermal" id="lh-tm-thermal" data-level="nominal">
+          <span class="lh-tm-led" aria-hidden="true"></span>
+          <span id="lh-tm-thermal-lbl">H-I ISM // CORE</span>
+          <strong id="lh-tm-thermal-txt">NOMINAL</strong>
+        </div>
+        <p class="lh-tm-drive" id="lh-tm-drive">CONJOINER // REACTIONLESS</p>
+        <p class="lh-tm-dock" id="lh-tm-dock">BERTHED &middot; NEXT: UNDOCK</p>
+        <p class="lh-tm-clock" id="lh-tm-clock">EPOCH 2370.00 &middot; &tau; 0.00 yr</p>
+      </section>
+
+      <!-- Bottom dock: floating sidecars (ice harvest / weapons pod) directly above the KG-2100 console -->
+      <div class="lh-bottom" id="lh-bottom">
+        <div class="kg-sidecar-stack" id="kg-sidecar-stack">
+          <div class="lh-harvest-bar" id="lh-harvest-bar" role="status" aria-live="polite" hidden>
+            <div class="lh-harvest-head">
+              <strong id="lh-harvest-title">COLLECTING ICE FROM SYSTEM</strong>
+              <span id="lh-harvest-pct">0%</span>
+            </div>
+            <div class="lh-harvest-track"><span class="lh-harvest-fill" id="lh-harvest-fill"></span></div>
+            <div class="lh-harvest-sub" id="lh-harvest-sub">DROPSHIPS DEPLOYING &middot; AUTO WARP</div>
+          </div>
+          <!-- Floating tactical fire-control pod: sits directly above the deck, never changes deck height -->
+          <div class="kg-wpn-bar" id="kg-wpn-bar" role="group" aria-label="Fire control" hidden>
+            <span class="kg-wpn-mode is-newt" id="kg-wpn-mode">NEWT // COILGUN + UV FEL</span>
+            <span class="kg-wpn-tag">TGT <strong id="kg-wpn-tgt">BORESIGHT (FWD)</strong></span>
+            <span class="kg-wpn-hp" id="kg-wpn-hp" hidden>
+              <span class="kg-wpn-hp-track"><span class="kg-wpn-hp-fill" id="kg-wpn-hp-fill" data-state="nominal"></span></span>
+              <strong id="kg-wpn-hp-txt">100%</strong>
+            </span>
+            <span class="kg-wpn-btns">
+              <button type="button" class="kg-key-btn" id="btn-wpn-lock" aria-pressed="false" title="Toggle tactical target lock vs free-fire boresight">LOCK TGT</button>
+              <button type="button" class="kg-key-btn" id="btn-wpn-cycle" title="Cycle tactical weapons lock [Tab]">NEXT TGT</button>
+              <button type="button" class="kg-key-btn" id="btn-wpn-msl" title="Launch AI-guided orbital missile salvo [Q]">MSL</button>
+              <button type="button" class="kg-key-btn kg-fire-key kg-sw-hazard" id="btn-wpn-fire" title="Fire the active hull weapons [Space]"><span class="kg-switch-led" aria-hidden="true"></span><span>FIRE</span></button>
+            </span>
+          </div>
+        </div>
+        <footer class="kg-deck" id="kg-deck" aria-label="Knight KG-2100 hardware console" hidden>
+          <div class="kg-topbar">
+            <div class="kg-plate"><span>[K]</span><span>KG-2100 // TORCH TELEGRAPH</span></div>
+            <div class="kg-topbar-right">
+              <span class="kg-clock-text" id="kg-clock-text">00y 000d 00:00:00 &middot; EPOCH 2370.00 &middot; 1&times;</span>
+              <button type="button" class="kg-fold-btn" id="kg-fold-btn" aria-controls="kg-deck">&#9660; STOW</button>
+            </div>
+          </div>
+          <div class="kg-bays" id="kg-bays">
+            <!-- BAY 1: skeuomorphic hardware switchboard (the P1 phosphor scope now lives permanently in the Sextant deck) -->
+            <div class="kg-switch-bay" id="kg-switch-bay">
+              <div class="kg-switch-plate" id="kg-mode-bar" role="group" aria-label="Piloting aids, HUD layers, camera lock and hull visibility">
+                <span class="kg-screw tl" aria-hidden="true"></span>
+                <span class="kg-screw tr" aria-hidden="true"></span>
+                <span class="kg-screw bl" aria-hidden="true"></span>
+                <span class="kg-screw br" aria-hidden="true"></span>
+                <div class="kg-sw-bank kg-sw-bank-a" role="group" aria-label="Bank A: HUD and optics">
+                  <h3 class="kg-sw-silk">BANK A <i>//</i> HUD &amp; OPTICS</h3>
+                  <div class="kg-sw-grid kg-sw-grid-3">
+                    <button type="button" class="kg-switch kg-tog is-flt" id="sw-hud-flt" aria-pressed="false" title="Collimated fighter orbital flight HUD [H]"><span class="kg-switch-led" aria-hidden="true"></span><span class="kg-tog-lbl">FLT</span></button>
+                    <button type="button" class="kg-switch kg-tog is-rel" id="sw-hud-rel" aria-pressed="false" title="Relativistic aberration, Doppler neutral ring &amp; turnover HUD [R]"><span class="kg-switch-led" aria-hidden="true"></span><span class="kg-tog-lbl">REL</span></button>
+                     <div class="kg-guarded-switch">
+                       <button type="button" class="kg-guard" id="btn-wpn-guard" aria-controls="sw-hud-wpn" aria-expanded="false" aria-label="Lift WPN safety cover" title="Lift WPN safety cover"><span aria-hidden="true">LIFT</span></button>
+                       <button type="button" class="kg-switch kg-tog is-wpn" id="sw-hud-wpn" aria-pressed="false" disabled title="Toggle tactical weapons &amp; fire-control HUD [G]"><span class="kg-switch-led" aria-hidden="true"></span><span class="kg-tog-lbl">WPN</span></button>
+                     </div>
+                    <button type="button" class="kg-switch kg-tog is-lock" id="sw-cam-lock" aria-pressed="false" title="Camera lock: hold custom mouse drag angle across Pilot Puck steering [L]"><span class="kg-switch-led" aria-hidden="true"></span><span class="kg-tog-lbl">LOCK</span></button>
+                    <button type="button" class="kg-switch kg-tog is-hide" id="sw-hide-ship" aria-pressed="false" title="Hide player Lighthugger hull for unobstructed cockpit view [U]"><span class="kg-switch-led" aria-hidden="true"></span><span class="kg-tog-lbl">HIDE</span></button>
+                    <button type="button" class="kg-switch kg-tog is-orbit3d" id="btn-vectors" aria-pressed="false" title="Toggle 3D orbital curve overlay in Helm [V]"><span class="kg-switch-led" aria-hidden="true"></span><span class="kg-tog-lbl">3D ORB</span></button>
+                  </div>
+                </div>
+                <div class="kg-sw-bank kg-sw-bank-b" role="group" aria-label="Bank B: relativistic navigation and safety">
+                  <h3 class="kg-sw-silk">BANK B <i>//</i> REL NAV &amp; SAFETY</h3>
+                  <div class="kg-sw-grid kg-sw-grid-2">
+                    <button type="button" class="kg-switch kg-tog is-fine" id="btn-fine-steer" aria-pressed="false" title="Reduce steering sensitivity"><span class="kg-switch-led" aria-hidden="true"></span><span class="kg-tog-lbl">FINE</span></button>
+                    <button type="button" class="kg-switch kg-tog is-loupe" id="btn-aberration-loupe" aria-pressed="false" title="Cycle forward optical zoom"><span class="kg-switch-led" aria-hidden="true"></span><span class="kg-tog-lbl" id="lbl-aberration-loupe">LOUPE 1x</span></button>
+                    <button type="button" class="kg-switch kg-tog is-rest" id="btn-rest-frame" aria-pressed="true" title="Show rest-frame star vectors on the REL HUD"><span class="kg-switch-led" aria-hidden="true"></span><span class="kg-tog-lbl">REST</span></button>
+                    <button type="button" class="kg-switch kg-tog is-gov" id="btn-rel-gov" aria-pressed="true" title="Limit forward thrust near the safe speed"><span class="kg-switch-led" aria-hidden="true"></span><span class="kg-tog-lbl">SAFE &gamma;</span></button>
+                  </div>
+                  <div class="kg-safety-row">
+                    <button type="button" class="kg-mini-btn" id="btn-ice-harvest" hidden>HARVEST ICE</button>
+                    <button type="button" class="kg-key-btn" id="btn-emerg-brake" hidden>EMERG BRAKE</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- BAY 2: Slotted torch telegraph quadrant + integrated skeuomorphic chronometer & warp trim -->
+            <div class="kg-telegraph-bay" aria-label="Torch telegraph and mission chronometer">
+              <div class="kg-tele-head">
+                <span>TORCH TELEGRAPH // CHRONOMETER</span>
+                <span class="kg-att-badge" id="kg-att-badge">PROGRADE</span>
+              </div>
+              <div class="kg-tele-body">
+                <div class="kg-quadrant-wrap">
+                  <div class="kg-detent-col">
+                    <button type="button" class="kg-detent-lbl" data-thrust-set="2" tabindex="-1">+2g</button>
+                    <button type="button" class="kg-detent-lbl" data-thrust-set="1" tabindex="-1">+1g</button>
+                    <button type="button" class="kg-detent-lbl is-zero" data-thrust-set="0" tabindex="-1">0g</button>
+                    <button type="button" class="kg-detent-lbl" data-thrust-set="-1" tabindex="-1">&minus;1g</button>
+                    <button type="button" class="kg-detent-lbl" data-thrust-set="-2" tabindex="-1">&minus;2g</button>
+                  </div>
+                  <div class="kg-quadrant-slot" id="kg-quadrant-slot" title="Drag the T-handle: -2g retro to +2g torch">
+                    <div class="kg-slot-groove" aria-hidden="true"></div>
+                    <div class="kg-slot-center-notch" aria-hidden="true"></div>
+                    <div class="kg-slot-fill" id="kg-slot-fill" aria-hidden="true"></div>
+                    <div class="kg-throttle-handle" id="kg-throttle-handle" tabindex="0" role="slider" aria-label="Torch thrust lever (g)" aria-valuemin="-2" aria-valuemax="2" aria-valuenow="0">
+                      <span class="kg-handle-grip"></span>
+                      <span class="kg-handle-line"></span>
+                    </div>
+                  </div>
+                </div>
+                <div class="kg-tele-controls">
+                  <div class="kg-vel-drum" id="kg-vel-drum">
+                    <div class="kg-drum-row">
+                      <span class="kg-drum-lbl" id="kg-vel-lbl">VEL &beta;</span>
+                      <output class="kg-drum-val" id="out-drive-beta">0.000c</output>
+                    </div>
+                    <span class="kg-drum-sub" id="out-drive-kin">0.00g &middot; &gamma; 1.00 &middot; &eta; 0.00</span>
+                    <div class="kg-vernier-wheel" id="kg-vernier-wheel" tabindex="0" role="slider" aria-label="Torch trim vernier (-2g to +2g)" aria-valuemin="-2" aria-valuemax="2" aria-valuenow="0" title="Drag or scroll to fine-trim torch acceleration">
+                      <div class="kg-vernier-ticks" id="kg-vernier-ticks" aria-hidden="true"></div>
+                      <span class="kg-vernier-cap">TORCH TRIM &harr;</span>
+                    </div>
+                  </div>
+                  <div class="kg-burn-grid">
+                    <button type="button" class="kg-switch kg-sw-compact" id="sw-flip" aria-pressed="false" title="Brake / Flip 180 [F]"><span class="kg-switch-led" aria-hidden="true"></span><span id="sw-flip-lbl">REV BRAKE</span></button>
+                    <button type="button" class="kg-switch kg-sw-compact" id="sw-allstop" aria-pressed="false" title="All stop [0]"><span class="kg-switch-led" aria-hidden="true"></span><span>ALL STOP</span></button>
+                  </div>
+                  <!-- Integrated skeuomorphic chronometer + digital elapsed timer + warp trim wheel -->
+                  <section class="kg-chrono-module" id="lh-chrono-pill" aria-label="Mission chronometer and warp trim">
+                    <span class="kg-screw tl" aria-hidden="true"></span>
+                    <span class="kg-screw tr" aria-hidden="true"></span>
+                    <span class="kg-screw bl" aria-hidden="true"></span>
+                    <span class="kg-screw br" aria-hidden="true"></span>
+                    <div class="lh-cp-shell">
+                      <div class="lh-cp-bezel" aria-hidden="true">
+                        <canvas id="lh-chrono-dial" width="120" height="120"></canvas>
+                      </div>
+                      <div class="lh-cp-data">
+                        <div class="lh-cp-head">
+                          <span class="lh-cp-title"><span class="lh-cp-led" id="lh-chrono-led" data-rate="realtime"></span><span class="lh-cp-epoch-lcd" id="lh-chrono-epoch">00y 000d 00:00:00</span></span>
+                          <span class="lh-cp-warp" id="lh-chrono-warp" data-rate="realtime">1&times; REALTIME</span>
+                        </div>
+                        <div class="lh-cp-subrow">
+                          <span class="lh-cp-sub" id="lh-chrono-sub">EP 2370.00 &middot; &tau; +0.00 yr</span>
+                          <span class="lh-cp-dil-wrap" aria-label="Relativistic proper-time rate">
+                            <span class="lh-cp-dil-lbl">1/&gamma;</span>
+                            <span class="lh-cp-dil-track"><span class="lh-cp-dil-fill" id="lh-chrono-dil-fill"></span></span>
+                            <span class="lh-cp-dil-pct" id="lh-chrono-dil-pct">100%</span>
+                          </span>
+                        </div>
+                        <div class="kg-chrono-row kg-warp-row" role="group" aria-label="Time warp">
+                          <button type="button" class="kg-mini-btn" data-warp="auto" aria-pressed="true" title="Automatic smooth chrono scaling">AUTO</button>
+                          <button type="button" class="kg-mini-btn" data-warp="1" aria-pressed="false" title="Real-time 1x [1]">1&times;</button>
+                          <button type="button" class="kg-mini-btn" data-warp="100" aria-pressed="false" title="Orbital 100x [2]">100&times;</button>
+                          <button type="button" class="kg-mini-btn" data-warp="10000" aria-pressed="false" title="Planetary 10,000x [3]">10k&times;</button>
+                          <button type="button" class="kg-mini-btn" data-warp="1000000" aria-pressed="false" title="System escape 1,000,000x [4]">1M&times;</button>
+                          <button type="button" class="kg-mini-btn" data-warp="interstellar" aria-pressed="false" title="Relativistic cruise 0.55 yr/s [5]">ISTL</button>
+                          <button type="button" class="kg-mini-btn" data-warp="hyper" aria-pressed="false" title="Hyper-shift 2.2 yr/s [6]">HYPR</button>
+                        </div>
+                        <div class="kg-vernier-wheel kg-warp-vernier" id="kg-warp-vernier" tabindex="0" role="slider" aria-label="Chrono warp fine trim" aria-valuemin="0" aria-valuemax="1" aria-valuenow="0" title="Drag or scroll to fine-trim simulation speed smoothly">
+                          <div class="kg-vernier-ticks" id="kg-warp-vernier-ticks" aria-hidden="true"></div>
+                          <span class="kg-vernier-cap" id="kg-warp-vernier-cap">WARP TRIM 1&times; &harr;</span>
+                        </div>
+                      </div>
+                    </div>
+                  </section>
+                  <div class="kg-chrono-row" role="group" aria-label="Attitude lock">
+                    <button type="button" class="kg-mini-btn" data-att="manual">MANUAL</button><button type="button" class="kg-mini-btn" data-att="prograde">PROGRADE</button><button type="button" class="kg-mini-btn" data-att="retrograde">RETRO</button><button type="button" class="kg-mini-btn" data-att="normal">NORMAL</button><button type="button" class="kg-mini-btn" data-att="course">COURSE</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- BAY 3: 3Dconnexion puck + 3-way skeuomorphic viewpoint selector + roll arc slider -->
+            <div class="kg-puck-bay">
+              <div class="kg-puck-head" role="group" aria-label="Puck mode and camera viewpoint">
+                <button type="button" class="kg-puck-mode-btn" data-puck-mode="steer" aria-pressed="true" title="Pilot mode: LMB drag pitches/yaws, LMB click fires (WPN on), RMB drag rotates camera, W/S torch, A/D yaw">PILOT</button>
+                <button type="button" class="kg-puck-mode-btn" data-puck-mode="cam" aria-pressed="false" title="Camera look mode: LMB or RMB drag orbits external camera freely without steering">CAM LOOK</button>
+                <button type="button" class="kg-puck-mode-btn kg-view-tri" id="btn-cam-view" data-cam-view="low" aria-pressed="false" title="3-way viewpoint preset: 3RD LOW / 3RD HIGH / 1ST PERS">
+                  <span class="kg-tri-pips" aria-hidden="true"><i></i><i></i><i></i></span>
+                  <span id="lbl-cam-view">3RD LOW</span>
+                </button>
+              </div>
+              <button type="button" class="kg-puck-caption" id="btn-puck-mode" data-mode="steer" aria-pressed="false" title="Active puck mode (click to toggle PILOT / CAM LOOK)">PUCK: PILOT (SNAP)</button>
+              <div class="kg-puck-row">
+                <div class="kg-roll-ring" id="kg-roll-ring" role="slider" tabindex="0" aria-label="Roll arc slider: drag the thumb along the half-circle to roll the hull; it springs back to zero on release" aria-valuemin="-1" aria-valuemax="1" aria-valuenow="0" title="Drag along the arc to roll port / starboard; springs back to 0 on release [Z / C]">
+                  <svg class="kg-roll-svg" viewBox="0 0 124 98" aria-hidden="true" focusable="false">
+                    <path class="kg-roll-rim" d="M 16 55 A 46 46 0 0 1 108 55"/>
+                    <path class="kg-roll-groove" d="M 16 55 A 46 46 0 0 1 108 55"/>
+                    <path class="kg-roll-fill" id="kg-roll-arc" d="M 62 9 L 62 9"/>
+                    <path class="kg-roll-ticks" id="kg-roll-ticks" d="M 9.5 55 A 52.5 52.5 0 0 1 114.5 55" pathLength="120"/>
+                    <path class="kg-roll-ticks kg-roll-ticks-major" d="M 9.5 55 A 52.5 52.5 0 0 1 114.5 55" pathLength="120"/>
+                    <path class="kg-roll-zero" d="M 62 1 L 62 17"/>
+                  </svg>
+                  <button type="button" class="kg-roll-cap kg-roll-cap-l" id="btn-roll-left" aria-label="Roll port" title="Hold to roll port / counter-clockwise [Z]">&#8634;</button>
+                  <button type="button" class="kg-roll-cap kg-roll-cap-r" id="btn-roll-right" aria-label="Roll starboard" title="Hold to roll starboard / clockwise [C]">&#8635;</button>
+                  <div class="kg-roll-thumb" id="kg-roll-thumb" aria-hidden="true"><span class="kg-roll-thumb-grip"></span></div>
+                  <div class="kg-puck-well" id="kg-puck-well">
+                    <div class="kg-puck-ring" aria-hidden="true"></div>
+                    <div class="kg-puck-knob" id="kg-puck-knob" tabindex="0" role="application" aria-label="3Dconnexion puck: steer ship or orbit camera">
+                      <div class="kg-puck-cap"></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="kg-zoom-col" role="group" aria-label="Camera zoom">
+                  <button type="button" class="kg-zoom-btn" id="btn-zoom-in" aria-label="Zoom in">+</button>
+                  <span class="kg-zoom-val" id="kg-zoom-val">&times;1.0</span>
+                  <button type="button" class="kg-zoom-btn" id="btn-zoom-out" aria-label="Zoom out">&minus;</button>
+                  <button type="button" class="kg-mini-btn" id="btn-zoom-reset" title="Reset camera">RST</button>
+                </div>
+              </div>
+              <div class="kg-puck-foot"><span id="kg-puck-axes">X +0.00 &middot; Y +0.00</span><span class="kg-vec-lock" id="kg-vec-lock" hidden>&#9679; BOW &plusmn;2&deg;</span></div>
+              <button type="button" class="acidburn-button lh-primary kg-action-key" id="lh-deck-primary" data-action="undock">UNDOCK</button>
+            </div>
+          </div>
+        </footer>
+
+        <!-- Stowed KG-2100 deck: same outer width & bezel, flattened cleanly in place -->
+        <div class="lh-helm-strip" id="lh-helm-strip" role="toolbar" aria-label="Knight KG-2100 stowed helm bar">
+          <div class="kg-topbar kg-stowed-top">
+            <div class="kg-plate"><span>[K]</span><span>KG-2100 // STOWED</span></div>
+            <div class="kg-topbar-right">
+              <span class="kg-clock-text" id="kg-stowed-clock">00y 000d 00:00:00 &middot; 1&times;</span>
+              <button type="button" class="acidburn-button lh-primary lh-stowed-primary" id="lh-primary-action" data-action="undock">UNDOCK</button>
+              <button type="button" class="kg-switch kg-sw-mini is-unstow" id="btn-kg-unstow" title="Deploy Knight KG-2100 hardware console [K]"><span class="kg-switch-led" aria-hidden="true"></span><span>&#9650; DEPLOY KG-2100</span></button>
+            </div>
+          </div>
+          <div class="lh-hs-row">
+            <div class="lh-hs-group lh-hs-thrust" role="group" aria-label="Torch thrust">
+              <span class="lh-hs-k">TORCH</span>
+              <button type="button" class="lh-hs-btn" data-thrust-set="-2">&minus;2g</button>
+              <button type="button" class="lh-hs-btn" data-thrust-set="-1">&minus;1g</button>
+              <button type="button" class="lh-hs-btn" data-thrust-set="0">0g</button>
+              <button type="button" class="lh-hs-btn" data-thrust-set="0.1">+0.1g</button>
+              <button type="button" class="lh-hs-btn" data-thrust-set="1">+1g</button>
+              <button type="button" class="lh-hs-btn" data-thrust-set="2">+2g</button>
+              <button type="button" class="lh-hs-btn is-amber" data-helm="flip" aria-pressed="false" title="Flip 180 [F]">FLIP 180&deg;</button>
+              <button type="button" class="lh-hs-btn is-red" data-helm="stop" title="All stop [0]">ALL STOP</button>
+            </div>
+            <div class="lh-hs-group lh-hs-warp" role="group" aria-label="Time warp">
+              <span class="lh-hs-k">WARP</span>
+              <button type="button" class="lh-hs-btn" data-warp="auto" aria-pressed="true">AUTO</button>
+              <button type="button" class="lh-hs-btn" data-warp="1" aria-pressed="false">1&times;</button>
+              <button type="button" class="lh-hs-btn" data-warp="100" aria-pressed="false">100&times;</button>
+              <button type="button" class="lh-hs-btn" data-warp="10000" aria-pressed="false">10k&times;</button>
+              <button type="button" class="lh-hs-btn" data-warp="1000000" aria-pressed="false">1M&times;</button>
+              <button type="button" class="lh-hs-btn" data-warp="interstellar" aria-pressed="false">ISTL</button>
+              <button type="button" class="lh-hs-btn" data-warp="hyper" aria-pressed="false">HYPR</button>
+            </div>
+            <div class="lh-hs-group lh-hs-att" role="group" aria-label="Attitude lock">
+              <span class="lh-hs-k">ATT</span>
+              <button type="button" class="lh-hs-btn" data-att="manual" aria-pressed="false">MAN</button>
+              <button type="button" class="lh-hs-btn" data-att="prograde" aria-pressed="true">PRO</button>
+              <button type="button" class="lh-hs-btn" data-att="retrograde" aria-pressed="false">RET</button>
+              <button type="button" class="lh-hs-btn" data-att="normal" aria-pressed="false">NRM</button>
+              <button type="button" class="lh-hs-btn" data-att="course" aria-pressed="false">CRS</button>
+            </div>
+            <div class="lh-hs-group lh-hs-hud" role="group" aria-label="HUD and camera lock">
+              <span class="lh-hs-k">HUD</span>
+              <button type="button" class="lh-hs-btn" data-hud-toggle="flt" aria-pressed="true" title="Fighter flight HUD [H]">FLT</button>
+              <button type="button" class="lh-hs-btn" data-hud-toggle="rel" aria-pressed="false" title="Relativistic nav HUD [R]">REL</button>
+              <button type="button" class="lh-hs-btn is-amber" data-hud-toggle="wpn" aria-pressed="false" title="Tactical weapons HUD [G]">WPN</button>
+              <button type="button" class="lh-hs-btn" data-hud-toggle="lock" aria-pressed="false" title="Camera lock: hold custom mouse drag angle across Pilot Puck steering [L]">LOCK</button>
+              <button type="button" class="lh-hs-btn" data-hud-toggle="hide" aria-pressed="false" title="Hide player Lighthugger hull [U]">HIDE</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Invariant top-center screen bar: direct child of #main, visible on EVERY screen -->
+    <nav class="lh-screenbar" id="lh-screenbar" aria-label="Game screens">
+      <button type="button" class="acidburn-button lh-sb-btn" data-screen-btn="menu" title="Main menu / mission select"><span class="lh-sb-lbl">MENU</span></button>
+      <button type="button" class="acidburn-button lh-sb-btn" data-screen-btn="helm" title="Helm flight view"><span class="lh-sb-lbl">HELM</span></button>
+      <button type="button" class="acidburn-button lh-sb-btn" id="btn-nav-orbits" data-screen-btn="orbits" title="Orbital Navigator [N]"><span class="lh-sb-lbl">ORBIT NAV</span> <kbd>N</kbd></button>
+      <button type="button" class="acidburn-button lh-sb-btn" data-screen-btn="starmap" title="Galactic Starmap [M]"><span class="lh-sb-lbl">STARMAP</span> <kbd>M</kbd></button>
+      <button type="button" class="acidburn-button lh-sb-btn" data-screen-btn="drydock" title="Drydock &amp; Ship Architect [Y]"><span class="lh-sb-lbl">DRYDOCK</span> <kbd>Y</kbd></button>
+      <button type="button" class="acidburn-button lh-sb-btn" data-screen-btn="sextant" title="Sextant &amp; Doppler Lab [X]"><span class="lh-sb-lbl">SEXTANT</span> <kbd>X</kbd></button>
+      <button type="button" class="acidburn-button lh-sb-btn" data-screen-btn="archive" title="Ship &amp; Voyage Archive [A]; on the helm use Shift+A (A is yaw)"><span class="lh-sb-lbl">ARCHIVE</span> <kbd>A</kbd></button>
+      <button type="button" class="acidburn-button lh-sb-btn" data-screen-btn="manual" title="Captain's Manual [?]"><span class="lh-sb-lbl">MANUAL</span> <kbd>?</kbd></button>
+      <button type="button" class="acidburn-button lh-sb-btn lh-sb-audio" id="btn-audio-toggle" aria-haspopup="dialog" aria-expanded="false" aria-controls="lh-audio-popover" data-muted="0" aria-label="Audio mixer" title="Audio mixer (right-click or Shift+M to mute)"><svg class="lh-sb-ico lh-ico-vol-on" viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M2.5 6.2h2.6l3.4-2.8v9.2L5.1 9.8H2.5z"/><path d="M11 5.6a3.4 3.4 0 0 1 0 4.8M13 3.9a5.8 5.8 0 0 1 0 8.2"/></svg><svg class="lh-sb-ico lh-ico-vol-off" viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M2.5 6.2h2.6l3.4-2.8v9.2L5.1 9.8H2.5z"/><path d="M11 5.8l3.2 4.4M14.2 5.8L11 10.2"/></svg></button>
+      <button type="button" class="acidburn-button lh-sb-btn lh-sb-photo" id="btn-photo-mode" aria-pressed="false" aria-label="Clean Screenshot Mode" title="Clean Screenshot Mode [Shift+H]"><svg class="lh-sb-ico" viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M2 5.2h2.3l1.1-1.7h5.2l1.1 1.7H14v7.8H2z"/><circle cx="8" cy="9" r="2.3"/></svg></button>
+      <button type="button" class="acidburn-button lh-sb-btn lh-sb-settings" id="btn-settings-open" aria-haspopup="dialog" aria-expanded="false" aria-controls="lh-settings-modal" aria-label="Settings" title="Graphics, audio, walkthrough &amp; flight settings [Esc]"><svg class="lh-sb-ico" viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="8" cy="8" r="2.5"/><path d="M8 1.5v1.6M8 12.9v1.6M1.5 8h1.6M12.9 8h1.6M3.4 3.4l1.1 1.1M11.5 11.5l1.1 1.1M12.6 3.4l-1.1 1.1M4.5 11.5l-1.1 1.1"/></svg><span class="lh-sb-lbl">SETTINGS</span></button>
+    </nav>
+
+    <!-- ================= SCREEN: MAIN MENU ================= -->
+    <section class="lh-screen" id="lh-screen-menu" data-screen-panel="menu" data-menutab="launch" aria-labelledby="lh-menu-title" hidden>
+      <!-- Tracks the 3D Lighthugger: projected under the hull each frame, clamped to the open sky corridor -->
+      <button type="button" class="kg-launch-key" id="btn-ship-launch-undock" title="Commit the hull, undock and fly now"><span class="kg-launch-led" aria-hidden="true"></span><span class="kg-launch-txt">LAUNCH &amp; UNDOCK</span></button>
+      <!-- Narrow portrait only: the two racks become one bottom sheet with these tabs -->
+      <div class="lh-menu-tabs" role="tablist" aria-label="Startup panels">
+        <button type="button" class="kg-mini-btn" role="tab" id="lh-menutab-launch" data-menutab="launch" aria-selected="true" aria-controls="lh-menu-left">LAUNCH / MISSIONS</button>
+        <button type="button" class="kg-mini-btn" role="tab" id="lh-menutab-custom" data-menutab="custom" aria-selected="false" aria-controls="lh-menu-right">SHIP CUSTOMIZER</button>
+      </div>
+
+      <!-- LEFT RACK: mission & command -->
+      <div class="author-card lh-card lh-menu-rack" id="lh-menu-left" role="region" aria-labelledby="lh-menu-title">
+        <p class="lh-rack-plate"><span>KG-2100</span><span>MISSION &amp; COMMAND</span></p>
+        <div class="section-header">
+          <h2 id="lh-menu-title">LAMINAR // RELATIVISTIC LIGHTHUGGER</h2>
+          <div class="section-line"></div>
+        </div>
+        <p class="lh-menu-tag">physics as constraint. a 3 km ice-capped Conjoiner torchship, a reactionless vacuum-tap drive, and twenty-eight real stars.</p>
+        <div class="lh-menu-primary">
+          <button type="button" class="acidburn-button" id="btn-menu-continue" hidden>CONTINUE VOYAGE</button>
+          <span id="lh-menu-saved"></span>
+          <button type="button" class="acidburn-button lh-launch-btn" id="btn-menu-resume">LAUNCH BRIDGE</button>
+          <span class="lh-menu-status" id="lh-menu-status">SOL &middot; TITAN CRYO-SPINDLE &middot; BERTHED</span>
+        </div>
+        <p class="lh-flow-cue">1. PICK HULL (RIGHT) &rarr; 2. LAUNCH BRIDGE &rarr; 3. UNDOCK &amp; PLOT [N / M]</p>
+        <p class="lh-sec-title">MISSION SCENARIOS</p>
+        <div class="lh-scenario-grid" id="lh-scenario-grid">
+          <button type="button" class="lh-scenario" data-scenario="sol-spindle">
+            <strong>SOL CRYO-SPINDLE</strong>
+            <span>Berthed at Titan. Refit, undock, learn orbits.</span>
+          </button>
+          <button type="button" class="lh-scenario" data-scenario="saturn-low">
+            <strong>LOW SATURN MANEUVER</strong>
+            <span>Parking orbit inside the rings. Match the station.</span>
+          </button>
+          <button type="button" class="lh-scenario" data-scenario="alpha-run">
+            <strong>ALPHA CENTAURI RUN</strong>
+            <span>4.37 LY relativistic transit (rev-torch or bi-cone flip).</span>
+          </button>
+          <button type="button" class="lh-scenario" data-scenario="sirius-binary">
+            <strong>SIRIUS BINARY</strong>
+            <span>White-dwarf companion; 8.6 LY of hard H-I dust.</span>
+          </button>
+        </div>
+        <p class="lh-sec-title">STATIONS</p>
+        <div class="lh-menu-nav">
+          <button type="button" class="acidburn-button" data-screen-btn="orbits">ORBIT NAV [N]</button>
+          <button type="button" class="acidburn-button" data-screen-btn="starmap">STARMAP [M]</button>
+          <button type="button" class="acidburn-button" data-screen-btn="drydock">DRYDOCK [Y]</button>
+          <button type="button" class="acidburn-button" data-screen-btn="sextant">SEXTANT [X]</button>
+          <button type="button" class="acidburn-button" data-screen-btn="archive">ARCHIVE [A]</button>
+          <button type="button" class="acidburn-button" data-screen-btn="manual">MANUAL [?]</button>
+        </div>
+        <div class="lh-menu-foot">
+          <button type="button" class="acidburn-button" id="btn-menu-tutorial">TUTORIAL</button>
+          <button type="button" class="acidburn-button lh-danger" id="btn-menu-reset">RESET VOYAGE</button>
+        </div>
+      </div>
+
+      <!-- RIGHT RACK: startup ship customizer (full tabbed creator matching Drydock) -->
+      <div class="author-card lh-card lh-menu-rack lh-cz-rack" id="lh-menu-right" role="region" aria-labelledby="lh-cz-title">
+        <p class="lh-rack-plate"><span>KG-2100</span><span>SHIP CUSTOMIZER</span></p>
+        <div class="section-header">
+          <h2 id="lh-cz-title">SHIP CUSTOMIZER</h2>
+          <div class="section-line"></div>
+        </div>
+        <p class="lh-cz-ship"><strong id="lh-cz-name">LONG PATIENCE</strong><span id="lh-cz-mix">STOCK HULL</span></p>
+        <div class="lh-tabs lh-cz-tabs" role="tablist" aria-label="Customizer sections">
+          <button type="button" class="acidburn-button" role="tab" data-cztab="hull" aria-selected="true">hull</button>
+          <button type="button" class="acidburn-button" role="tab" data-cztab="ice" aria-selected="false">ice shield</button>
+          <button type="button" class="acidburn-button" role="tab" data-cztab="styles" aria-selected="false">styles</button>
+          <button type="button" class="acidburn-button" role="tab" data-cztab="drive" aria-selected="false">drive</button>
+          <button type="button" class="acidburn-button" role="tab" data-cztab="weapons" aria-selected="false">weapons</button>
+        </div>
+        <div class="lh-panel-body lh-cz-body">
+          <div data-czpanel="hull" id="lh-cz-hull-panel">
+            <p class="lh-sec-title">ARCHETYPES</p>
+            <div class="lh-chip-grid lh-cz-presets" id="lh-cz-presets" role="group" aria-label="Archetype presets"></div>
+            <div id="lh-cz-shape"></div>
+          </div>
+          <div data-czpanel="ice" id="lh-cz-ice" hidden>
+            <div id="lh-cz-ice-body"></div>
+            <div class="lh-readout" id="lh-cz-shield"></div>
+          </div>
+          <div data-czpanel="styles" id="lh-cz-styles" hidden></div>
+          <div data-czpanel="drive" id="lh-cz-drive" hidden>
+            <div id="lh-cz-drive-body"></div>
+            <p class="lh-sec-title">DRIVE SPECS</p>
+            <dl class="lh-plan-grid lh-specs" id="lh-cz-specs"></dl>
+          </div>
+          <div data-czpanel="weapons" id="lh-cz-weapons" hidden></div>
+        </div>
+        <div class="lh-cz-foot">
+          <div class="lh-chip-grid lh-cz-cams" role="group" aria-label="Showcase camera">
+            <button type="button" class="acidburn-button" data-dcam="orbit" aria-pressed="true">orbit</button>
+            <button type="button" class="acidburn-button" data-dcam="bow" aria-pressed="false">bow</button>
+            <button type="button" class="acidburn-button" data-dcam="side" aria-pressed="false">side</button>
+            <button type="button" class="acidburn-button" data-dcam="stern" aria-pressed="false">stern</button>
+            <button type="button" class="acidburn-button" data-dcam="concourse" aria-pressed="false">window</button>
+            <button type="button" class="acidburn-button" data-cutaway="1" aria-pressed="false">cutaway ice</button>
+          </div>
+          <div class="lh-btn-row lh-cz-actions">
+            <button type="button" class="acidburn-button" id="btn-cz-save">save archive</button>
+            <button type="button" class="acidburn-button lh-launch-btn" data-screen-btn="drydock">DRYDOCK [Y]</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= SCREEN: ORBITAL NAVIGATOR ================= -->
+    <section class="lh-screen lh-chrono-screen kg-station-screen" id="lh-screen-orbits" data-screen-panel="orbits" aria-labelledby="lh-orbits-title" hidden>
+      <div class="lh-chrono-backdrop">
+        <canvas id="lh-orbit-canvas" class="lh-map-canvas" tabindex="0" aria-label="3D orbital chronoscope: drag to rotate, shift-drag or right-drag to pan, scroll or pinch to zoom, click a body or open altitude to plot an orbit, drag the red green blue handles to shape a burn"></canvas>
+      </div>
+      <div class="lh-chrono-hud kg-chrono-top">
+        <h2 class="kg-plate lh-chrono-plate" id="lh-orbits-title">KG-2100 CHRONOSCOPE</h2>
+        <div class="kg-chrono-controls">
+          <div class="lh-seg lh-frame-seg" role="group" aria-label="Reference frame">
+            <button type="button" class="acidburn-button kg-chrono-btn" id="btn-orbit-star" data-orbit-frame="star" aria-pressed="false" title="Heliocentric frame (star SOI)">star</button>
+            <button type="button" class="acidburn-button kg-chrono-btn" id="btn-orbit-planet" data-orbit-frame="planet" aria-pressed="true" title="Planet-centred frame (planet SOI)">planet</button>
+            <button type="button" class="acidburn-button kg-chrono-btn" id="btn-orbit-moon" data-orbit-frame="moon" aria-pressed="false" title="Moon-centred close-orbit frame" hidden>moon</button>
+            <button type="button" class="acidburn-button kg-chrono-btn" id="btn-orbit-target" data-orbit-frame="target" aria-pressed="false" title="Track the selected target ephemeris">target</button>
+            <button type="button" class="acidburn-button kg-chrono-btn" id="btn-orbit-synodic" data-orbit-frame="synodic" aria-pressed="false" title="Co-rotating synodic frame: Lagrange points stand still">synodic</button>
+          </div>
+          <div class="lh-seg lh-moon-chips" id="lh-moon-chips" role="group" aria-label="Moon selector" hidden></div>
+          <div class="lh-seg lh-view-seg" role="group" aria-label="Chronoscope display">
+            <button type="button" class="acidburn-button kg-chrono-btn" id="btn-orbit-hill" aria-pressed="true" title="Hill spheres">hill</button>
+            <button type="button" class="acidburn-button kg-chrono-btn" id="btn-orbit-lagrange" aria-pressed="true" title="Lagrange points and Lissajous halo orbits">lagrange</button>
+            <button type="button" class="acidburn-button kg-chrono-btn" id="btn-orbit-ice" aria-pressed="true" title="Toggle mapped system ice deposits">ice</button>
+            <button type="button" class="acidburn-button kg-chrono-btn" id="btn-orbit-top" aria-pressed="false" title="Top-down view">top</button>
+            <button type="button" class="acidburn-button kg-chrono-btn" id="btn-orbit-fit">fit</button>
+            <button type="button" class="acidburn-button kg-chrono-btn" id="btn-orbit-ship" title="Center the chronoscope on the Lighthugger">center ship</button>
+          </div>
+        </div>
+        <button type="button" class="acidburn-button kg-chrono-btn" data-screen-btn="helm" title="Close and return to helm [Esc]">close</button>
+      </div>
+      <div class="lh-orbit-deepspace" id="lh-orbit-deepspace" role="status" aria-live="polite" hidden>
+        <p class="lh-deep-plate"><span>KG-2100</span><span>DEEP SPACE</span></p>
+        <h3 class="lh-deep-title">ORBIT NAV OFFLINE</h3>
+        <p class="lh-deep-dist" id="lh-deep-dist">NEAREST STAR &mdash;</p>
+        <p class="lh-deep-note">The Lighthugger is more than one light-week from the nearest star. There is no gravity well to plot an orbit around; navigate with the Starmap and the torch telegraph.</p>
+        <div class="lh-btn-row lh-deep-actions">
+          <button type="button" class="acidburn-button lh-launch-btn" data-screen-btn="starmap">OPEN STARMAP [M]</button>
+          <button type="button" class="acidburn-button" data-screen-btn="helm">RETURN TO HELM</button>
+        </div>
+      </div>
+      <div class="lh-split-main lh-map-frame lh-chrono-viewport">
+        <p class="lh-map-note kg-orbit-frame-readout" id="lh-orbit-note">GRAV: SATURN (SOI)</p>
+        <p class="lh-map-note lh-orbit-hint" id="lh-orbit-hint">PICK TARGET &middot; TAP FLIP-BURN &middot; EXEC &amp; WATCH ON HELM &middot; SCROLL ZOOM OUT TO STAR &amp; SYSTEM VEIL</p>
+        <div class="lh-map-legend" aria-hidden="true">
+          <span class="lg-cur">CURRENT</span><span class="lg-xfer">TRANSFER</span><span class="lg-tgt">TARGET</span><span class="lg-ice">ICE</span>
+        </div>
+      </div>
+      <footer class="kg-deck kg-station-deck" id="kg-orbit-deck" aria-label="KG-2100 orbital control console">
+        <span class="kg-post tl" aria-hidden="true"></span>
+        <span class="kg-post tr" aria-hidden="true"></span>
+        <span class="kg-post bl" aria-hidden="true"></span>
+        <span class="kg-post br" aria-hidden="true"></span>
+        <div class="kg-topbar">
+          <span class="kg-plate">ORBITAL CONTROL</span>
+          <button type="button" class="kg-key-btn kg-exec-watch-btn" id="btn-orbit-exec-watch" disabled title="Execute the planned burn and return to Helm to watch live">EXEC &amp; WATCH</button>
+          <button type="button" class="kg-fold-btn" id="btn-orbit-stow" aria-controls="kg-orbit-bays" aria-expanded="true">&#9660; STOW</button>
+        </div>
+        <div class="kg-station-bays" id="kg-orbit-bays">
+          <section class="kg-station-bay" aria-label="Target and automated orders">
+            <h3 class="kg-bay-legend">TARGET &amp; ORDERS</h3>
+            <div class="lh-target-list" id="lh-target-list" role="listbox" aria-label="Target orbits"></div>
+            <div class="lh-quick-row" id="lh-quick-row" role="group" aria-label="Quick maneuvers">
+              <button type="button" id="btn-orbit-capture" class="lh-quick-btn is-orbit" data-quick-burn="orbit" title="Plot a transfer and safe capture orbit around the selected target">
+                <svg class="lh-quick-ico" viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="8" cy="8" r="2.2" fill="currentColor" stroke="none"/><ellipse cx="8" cy="8" rx="6.2" ry="3.3" transform="rotate(-24 8 8)"/><path d="M12.2 3.3 L13.8 5.2 L11.4 5.6"/></svg>
+                <span class="lh-quick-lbl" id="lbl-orbit-capture">ORBIT</span>
+              </button>
+              <button type="button" id="btn-flip-burn" class="lh-quick-btn is-torch" data-quick-burn="brachistochrone" aria-pressed="false" disabled title="High-g flip-and-burn: accelerate to the midpoint, flip, decelerate to the target">
+                <svg class="lh-quick-ico" viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M2.2 12.6 Q5.6 11.4 8 8 Q10.4 4.6 13.8 3.4"/><path d="M8 5.9 L10.1 8 L8 10.1 L5.9 8 Z" fill="currentColor"/><path d="M11.6 2.8 L14.1 3.3 L13.1 5.7"/></svg>
+                <span class="lh-quick-lbl">FLIP-BURN</span>
+              </button>
+              <button type="button" class="lh-quick-btn" data-quick-burn="rendezvous" title="Transfer to the target and match velocity">
+                <svg class="lh-quick-ico" viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="6.2" cy="8.8" r="4.2" stroke-opacity="0.75"/><circle cx="9.8" cy="7.2" r="4.2" stroke-dasharray="2 1.6"/><path d="M8 3.8 L9.6 5.4 L8 7 L6.4 5.4 Z" fill="currentColor" stroke="none"/></svg>
+                <span class="lh-quick-lbl">RNDZ</span>
+              </button>
+              <button type="button" class="lh-quick-btn" data-quick-burn="circularize" title="Circularize around current primary">
+                <svg class="lh-quick-ico" viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><ellipse cx="8" cy="8" rx="6" ry="3.2" stroke-dasharray="2 1.8" stroke-opacity="0.65"/><circle cx="8" cy="8" r="5.5"/><circle cx="8" cy="8" r="1.4" fill="currentColor" stroke="none"/></svg>
+                <span class="lh-quick-lbl">CIRC</span>
+              </button>
+              <button type="button" id="btn-orbit-more" class="lh-quick-btn is-more" aria-expanded="false" aria-controls="lh-quick-more" title="Show match, intercept, moon low, node, Lagrange and circ epoch options">
+                <svg class="lh-quick-ico" viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true" focusable="false"><circle cx="5" cy="5.5" r="1.1" fill="currentColor"/><circle cx="11" cy="5.5" r="1.1" fill="currentColor"/><circle cx="5" cy="10.5" r="1.1" fill="currentColor"/><circle cx="11" cy="10.5" r="1.1" fill="currentColor"/></svg>
+                <span class="lh-quick-lbl">MORE</span>
+              </button>
+            </div>
+            <div class="lh-quick-more" id="lh-quick-more" hidden>
+              <div class="lh-quick-more-grid" role="group" aria-label="Additional maneuvers">
+                <button type="button" class="lh-quick-btn" data-quick-burn="match" title="Match the selected target orbit">
+                  <svg class="lh-quick-ico" viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" aria-hidden="true" focusable="false"><circle cx="8" cy="8" r="5.6"/><circle cx="8" cy="8" r="3.4" stroke-dasharray="2 1.6"/><path d="M8 1.4 L8 3.6 M8 12.4 L8 14.6"/></svg>
+                  <span class="lh-quick-lbl">MATCH</span>
+                </button>
+                <button type="button" class="lh-quick-btn" data-quick-burn="intercept" title="Transfer to the target without matching velocity">
+                  <svg class="lh-quick-ico" viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="8" cy="8" r="5.5" stroke-opacity="0.55"/><path d="M2.6 12.6 Q6.4 6.8 12.2 4.2"/><path d="M10.1 3.4 L12.6 4.0 L11.5 6.4"/></svg>
+                  <span class="lh-quick-lbl">INTERCEPT</span>
+                </button>
+                <button type="button" class="lh-quick-btn" data-quick-burn="moon-close" title="Drop into a safe low orbit of the selected moon">
+                  <svg class="lh-quick-ico" viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.35" aria-hidden="true" focusable="false"><circle cx="8" cy="8" r="3" fill="currentColor" fill-opacity="0.28"/><circle cx="8" cy="8" r="5.2" stroke-dasharray="3 1.5"/></svg>
+                  <span class="lh-quick-lbl">MOON LOW</span>
+                </button>
+                <button type="button" class="lh-quick-btn" data-quick-burn="node" title="Add a free maneuver node">
+                  <svg class="lh-quick-ico" viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" aria-hidden="true" focusable="false"><path d="M2.5 11.5 Q8 4 13.5 11.5" stroke-opacity="0.7"/><path d="M8 3.5 L8 9.5 M5 6.5 L11 6.5"/></svg>
+                  <span class="lh-quick-lbl">+ NODE</span>
+                </button>
+                <button type="button" class="lh-quick-btn" data-quick-burn="L1" title="Transfer to an L1 halo orbit">
+                  <svg class="lh-quick-ico" viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.35" aria-hidden="true" focusable="false"><circle cx="3.2" cy="8" r="1.5" fill="currentColor"/><circle cx="12.8" cy="8" r="1.3" fill="currentColor"/><ellipse cx="8.2" cy="8" rx="1.8" ry="3.6"/></svg>
+                  <span class="lh-quick-lbl">L1 HALO</span>
+                </button>
+                <button type="button" class="lh-quick-btn" data-quick-burn="L2" title="Transfer to an L2 halo orbit">
+                  <svg class="lh-quick-ico" viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.35" aria-hidden="true" focusable="false"><circle cx="3" cy="8" r="1.5" fill="currentColor"/><circle cx="8.8" cy="8" r="1.3" fill="currentColor"/><ellipse cx="12.6" cy="8" rx="1.7" ry="3.5"/></svg>
+                  <span class="lh-quick-lbl">L2 HALO</span>
+                </button>
+                <button type="button" class="lh-quick-btn" data-quick-burn="L4" title="Transfer to an L4 libration loop">
+                  <svg class="lh-quick-ico" viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3.2 12 L12.8 12 L8 3.4 Z" stroke-opacity="0.75"/><circle cx="8" cy="3.4" r="1.4" fill="currentColor"/></svg>
+                  <span class="lh-quick-lbl">L4</span>
+                </button>
+              </div>
+              <div class="lh-circ-at" role="group" aria-label="Circularize epoch">
+                <span class="lh-circ-k">CIRC AT:</span>
+                <button type="button" class="kg-mini-btn" data-circ-mode="now" aria-pressed="true" title="Circularize immediately at current position">NOW</button>
+                <button type="button" class="kg-mini-btn" data-circ-mode="pe" aria-pressed="false" title="Circularize at periapsis (PE)">PE</button>
+                <button type="button" class="kg-mini-btn" data-circ-mode="ap" aria-pressed="false" title="Circularize at apoapsis (AP)">AP</button>
+              </div>
+            </div>
+          </section>
+          <section class="kg-station-bay" aria-label="Maneuver plan and commit">
+            <h3 class="kg-bay-legend">MANEUVER PLAN</h3>
+            <div class="lh-readout" id="lh-orbit-elements">&mdash;</div>
+            <label class="lh-dial kg-delay" for="rng-burn-delay">
+              <span class="lh-dial-head"><span>BURN DELAY</span><output id="val-burn-delay" for="rng-burn-delay">&mdash;</output></span>
+              <input id="rng-burn-delay" type="range" min="0" max="1" step="1" value="0" disabled>
+            </label>
+            <p class="kg-bay-legend">BURN CHAIN <span class="lh-chain-total" id="lh-chain-total"></span></p>
+            <div class="lh-burn-chain" id="lh-burn-chain" role="listbox" aria-label="Queued burns"></div>
+            <div class="lh-plan-summary" id="lh-orbit-plan">Select a target orbit.</div>
+            <label class="lh-check"><input type="checkbox" id="chk-autowarp" checked> <span>AUTO-WARP TO NODE</span></label>
+            <div class="kg-station-keys">
+              <button type="button" class="kg-key-btn kg-ship-burn-key" id="btn-orbit-add-ship" title="Plot a maneuver node on the Lighthugger's own orbit">+ BURN AT SHIP</button>
+              <button type="button" class="kg-key-btn kg-commit-key" id="btn-orbit-execute" disabled>COMMIT &amp; EXECUTE</button>
+              <button type="button" class="kg-key-btn" id="btn-orbit-cancel" disabled>CANCEL</button>
+            </div>
+          </section>
+          <section class="kg-station-bay" aria-label="Three-axis vector trim">
+            <h3 class="kg-bay-legend">VECTOR TRIM (KM/S)</h3>
+            <div class="lh-trim-steps" role="group" aria-label="Trim step size (km/s)">
+              <button type="button" class="kg-mini-btn" data-trim-step="0.1" aria-pressed="false" title="Coarse trim: 0.1 km/s per click">COARSE 0.1</button>
+              <button type="button" class="kg-mini-btn" data-trim-step="0.01" aria-pressed="true" title="Fine trim: 0.01 km/s per click">FINE 0.01</button>
+              <button type="button" class="kg-mini-btn" data-trim-step="0.001" aria-pressed="false" title="Micro trim: 0.001 km/s per click">MICRO 0.001</button>
+            </div>
+            <div class="lh-node-trim" id="lh-node-trim">
+              <div class="lh-trim-row" data-axis="prograde">
+                <span class="lh-trim-k">PRO</span>
+                <button type="button" class="lh-hs-btn" data-nudge="-1">&minus;</button>
+                <input type="range" min="-5" max="5" step="0.01" value="0" aria-label="Prograde delta-v">
+                <button type="button" class="lh-hs-btn" data-nudge="1">+</button>
+                <output>0.00</output>
+              </div>
+              <div class="lh-trim-row" data-axis="normal">
+                <span class="lh-trim-k">NRM</span>
+                <button type="button" class="lh-hs-btn" data-nudge="-1">&minus;</button>
+                <input type="range" min="-5" max="5" step="0.01" value="0" aria-label="Normal delta-v">
+                <button type="button" class="lh-hs-btn" data-nudge="1">+</button>
+                <output>0.00</output>
+              </div>
+              <div class="lh-trim-row" data-axis="radial">
+                <span class="lh-trim-k">RAD</span>
+                <button type="button" class="lh-hs-btn" data-nudge="-1">&minus;</button>
+                <input type="range" min="-5" max="5" step="0.01" value="0" aria-label="Radial delta-v">
+                <button type="button" class="lh-hs-btn" data-nudge="1">+</button>
+                <output>0.00</output>
+              </div>
+            </div>
+            <div class="lh-burn-status" id="lh-burn-status" hidden></div>
+          </section>
+        </div>
+      </footer>
+    </section>
+
+    <!-- ================= SCREEN: GALACTIC STARMAP ================= -->
+    <section class="lh-screen lh-screen-split lh-chrono-screen" id="lh-screen-starmap" data-screen-panel="starmap" aria-labelledby="lh-starmap-title" hidden>
+      <div class="lh-split-main lh-map-frame lh-chrono-viewport">
+        <canvas id="lh-starmap-canvas" class="lh-map-canvas" tabindex="0" aria-label="Galactic astrolabe chronoscope: drag to rotate and tilt, scroll or pinch to zoom, click a star to select"></canvas>
+        <div class="lh-map-hud lh-map-hud-tl lh-chrono-hud">
+          <span class="kg-plate lh-chrono-plate"><span>KG-2100</span><span>GALACTIC ASTROLABE</span></span>
+          <div class="lh-seg" role="group" aria-label="Map scale">
+            <button type="button" class="acidburn-button kg-chrono-btn" data-starscale="linear" aria-pressed="true">linear ly</button>
+            <button type="button" class="acidburn-button kg-chrono-btn" data-starscale="local" aria-pressed="false">local focus</button>
+            <button type="button" class="acidburn-button kg-chrono-btn" data-starscale="milkyway" aria-pressed="false">milky way</button>
+          </div>
+          <button type="button" class="acidburn-button kg-chrono-btn" id="btn-star-flat">top-down</button>
+          <input class="lh-text-input lh-star-search" id="inp-star-search" type="search" placeholder="filter stars / class" aria-label="Filter stars">
+        </div>
+        <p class="lh-map-note lh-map-note-br" id="lh-starmap-note">DRAG ROTATE (3D) &middot; SCROLL ZOOM TO MILKY WAY &middot; CLICK STAR TO SELECT</p>
+      </div>
+      <aside class="author-card lh-card lh-split-panel lh-chrono-panel" aria-label="Mission planner">
+        <p class="lh-rack-plate"><span>KG-2100 // BAY M</span><span>RELATIVISTIC ASTROLABE</span></p>
+        <div class="section-header lh-panel-head">
+          <h2 id="lh-starmap-title">GALACTIC STARMAP</h2>
+          <div class="section-line"></div>
+          <button type="button" class="acidburn-button lh-back" data-screen-btn="helm" title="Close and return to helm [Esc]">close</button>
+        </div>
+        <div class="lh-panel-body">
+          <div class="lh-star-card" id="lh-star-card">
+            <div class="lh-star-head"><strong id="lh-star-name">ALPHA CENTAURI</strong><span id="lh-star-dist">4.37 LY</span></div>
+            <p class="lh-star-sub" id="lh-star-sub"></p>
+            <p class="lh-star-lore" id="lh-star-lore"></p>
+            <ul class="lh-body-list" id="lh-star-bodies"></ul>
+          </div>
+          <p class="lh-sec-title">RELATIVISTIC FLIGHT PLAN</p>
+          <label class="lh-dial" for="rng-accel">
+            <span class="lh-dial-head"><span>Proper acceleration</span><span id="val-accel">1.00g</span></span>
+            <input id="rng-accel" type="range" min="0.2" max="2" step="0.05" value="1">
+          </label>
+          <label class="lh-dial" for="rng-betacap">
+            <span class="lh-dial-head"><span>Cruise &beta; cap</span><span id="val-betacap">OFF</span></span>
+            <input id="rng-betacap" type="range" min="0.30" max="1" step="0.005" value="1">
+          </label>
+          <dl class="lh-plan-grid" id="lh-plan-grid">
+            <div><dt>d</dt><dd id="pl-d">&mdash;</dd></div>
+            <div><dt>PROPER &Delta;&tau;</dt><dd id="pl-tau">&mdash;</dd></div>
+            <div><dt>GALACTIC &Delta;t</dt><dd id="pl-dt">&mdash;</dd></div>
+            <div><dt>PEAK &beta; / &gamma;</dt><dd id="pl-peak">&mdash;</dd></div>
+            <div><dt>DRIVE MODE</dt><dd id="pl-drive">REACTIONLESS</dd></div>
+            <div><dt>THERMAL PEAK</dt><dd id="pl-thermal">&mdash;</dd></div>
+            <div><dt>ICE ABLATION</dt><dd id="pl-ice">&mdash;</dd></div>
+            <div><dt>ARRIVAL EPOCH</dt><dd id="pl-arrive">&mdash;</dd></div>
+          </dl>
+          <div class="lh-plan-risk" id="lh-plan-risk" data-level="nominal">FLIGHT RISK: NOMINAL</div>
+          <label class="lh-dial" for="rng-max-hop">
+            <span class="lh-dial-head"><span>SAFE HOP LIMIT (10&ndash;20 LY)</span><output id="val-max-hop" for="rng-max-hop">15 LY</output></span>
+            <input id="rng-max-hop" type="range" min="10" max="20" step="1" value="15">
+          </label>
+          <h3 class="lh-sec-title">MULTI-HOP ROUTE</h3>
+          <div class="lh-multihop-plan" id="lh-multihop-plan"></div>
+          <p class="lh-sec-title">STATION CHARTERS</p>
+          <div class="lh-charter-list" id="lh-charter-list"></div>
+          <p class="lh-sec-title">CATALOG (28 SYSTEMS)</p>
+          <div class="lh-sys-list" id="lh-sys-list"></div>
+        </div>
+        <div class="lh-starmap-foot lh-btn-col">
+          <button type="button" class="acidburn-button lh-launch-btn" id="btn-launch-multihop" disabled>LAUNCH MULTI-HOP (1g)</button>
+          <button type="button" class="acidburn-button lh-launch-btn" id="btn-launch-transit">LAUNCH RELATIVISTIC TRANSIT</button>
+          <button type="button" class="acidburn-button lh-danger" id="btn-abort-transit">ABORT / FLIP &amp; BRAKE</button>
+        </div>
+      </aside>
+    </section>
+
+    <!-- ================= SCREEN: DRYDOCK & SHIP ARCHITECT ================= -->
+    <section class="lh-screen lh-screen-drawer" id="lh-screen-drydock" data-screen-panel="drydock" aria-labelledby="lh-drydock-title" hidden>
+      <div class="lh-drawer-cams" role="group" aria-label="Drydock camera">
+        <span class="lh-drawer-cams-k" aria-hidden="true">CAM</span>
+        <button type="button" class="acidburn-button" data-dcam="orbit" aria-pressed="true">orbit</button>
+        <button type="button" class="acidburn-button" data-dcam="bow">bow</button>
+        <button type="button" class="acidburn-button" data-dcam="side">side</button>
+        <button type="button" class="acidburn-button" data-dcam="stern">stern</button>
+        <button type="button" class="acidburn-button" data-dcam="concourse">window</button>
+        <button type="button" class="acidburn-button" id="btn-cutaway" data-cutaway="1" aria-pressed="false">cutaway ice</button>
+      </div>
+      <aside class="author-card lh-card lh-split-panel" aria-label="Ship architect">
+        <div class="section-header lh-panel-head">
+          <h2 id="lh-drydock-title">DRYDOCK &amp; ARCHITECT</h2>
+          <div class="section-line"></div>
+          <button type="button" class="acidburn-button lh-back" data-screen-btn="helm" title="Close and return to helm [Esc]">close</button>
+        </div>
+        <div class="lh-tabs" role="tablist" aria-label="Architect sections">
+          <button type="button" class="acidburn-button" role="tab" data-dtab="hull" aria-selected="true">hull</button>
+          <button type="button" class="acidburn-button" role="tab" data-dtab="styles" aria-selected="false">surface styles</button>
+          <button type="button" class="acidburn-button" role="tab" data-dtab="ice" aria-selected="false">ice shield</button>
+          <button type="button" class="acidburn-button" role="tab" data-dtab="prop" aria-selected="false">conjoiner drive</button>
+          <button type="button" class="acidburn-button" role="tab" data-dtab="weapons" aria-selected="false">weapons</button>
+          <button type="button" class="acidburn-button" role="tab" data-dtab="vault" aria-selected="false">fleet vault</button>
+        </div>
+        <div class="lh-panel-body">
+          <div data-dpanel="hull" id="lh-dd-hull"></div>
+          <div data-dpanel="styles" id="lh-dd-styles" hidden></div>
+          <div data-dpanel="ice" id="lh-dd-ice" hidden></div>
+          <div data-dpanel="prop" id="lh-dd-prop" hidden></div>
+          <div data-dpanel="weapons" id="lh-dd-weapons" hidden></div>
+          <div data-dpanel="vault" id="lh-dd-vault" hidden>
+            <p class="lh-sec-title">SHIP &amp; VOYAGE ARCHIVE</p>
+            <p class="lh-cz-note">Blueprints with notes, voyage snapshots, JSON transfer and ATProto records live in the Archive.</p>
+            <div class="lh-btn-row"><button type="button" class="acidburn-button" data-screen-btn="archive">open archive [A]</button></div>
+            <p class="lh-sec-title">SAVE CURRENT HULL</p>
+            <div class="lh-input-row">
+              <input id="inp-ship-name" class="lh-text-input" type="text" maxlength="44" placeholder="Vessel name" aria-label="Vessel name">
+              <button type="button" class="acidburn-button" id="btn-save-ship">save</button>
+            </div>
+            <p class="lh-sec-title">SAVED FLEET</p>
+            <ul class="lh-vault-list" id="lh-vault-list"></ul>
+            <p class="lh-sec-title">LH3 SHARE CODE</p>
+            <div class="lh-input-row">
+              <input id="inp-share-code" class="lh-text-input" type="text" aria-label="Hull share code" placeholder="LH3...">
+              <button type="button" class="acidburn-button" id="btn-copy-code">copy</button>
+              <button type="button" class="acidburn-button" id="btn-load-code">load</button>
+            </div>
+            <p class="lh-share-feedback" id="lh-share-feedback" role="status" hidden></p>
+          </div>
+        </div>
+        <div class="lh-ledger" id="lh-dd-ledger">
+          <div class="lh-ledger-row"><span id="lh-dd-berth">BERTH: TITAN CRYO-SPINDLE</span><strong id="lh-dd-credits">&#8373;450</strong></div>
+          <div class="lh-ledger-row"><span id="lh-dd-cost">REFIT: NO CHANGES</span><span id="lh-dd-lock" class="lh-ledger-lock"></span></div>
+          <div class="lh-btn-row">
+            <button type="button" class="acidburn-button lh-launch-btn" id="btn-commission">COMMISSION</button>
+            <button type="button" class="acidburn-button" id="btn-revert">revert</button>
+            <button type="button" class="acidburn-button" id="btn-refuel">RE-GLAZE &amp; COOL 100%</button>
+          </div>
+        </div>
+      </aside>
+    </section>
+
+    <!-- ================= SCREEN: SEXTANT & DOPPLER LAB ================= -->
+    <section class="lh-screen lh-chrono-screen kg-station-screen" id="lh-screen-sextant" data-screen-panel="sextant" aria-labelledby="lh-sextant-title" hidden>
+      <div class="lh-sx-banner lh-chrono-bezel" id="lh-sx-banner">
+        <h2 class="kg-plate lh-chrono-plate" id="lh-sextant-title">KG-2100 SEXTANT</h2>
+        <span id="lh-sx-mag">OPTICAL &middot; MAG &times;1.0</span>
+        <span id="lh-sx-coords">&theta; 0.0&deg; &middot; &phi; 0&deg;</span>
+        <span id="lh-sx-scale" class="lh-sx-scale"></span>
+        <button type="button" class="acidburn-button kg-chrono-btn" data-screen-btn="helm" title="Close and return to helm [Esc]">close</button>
+      </div>
+      <footer class="kg-deck kg-station-deck" id="kg-sextant-deck" aria-label="KG-2100 Sextant console">
+        <span class="kg-post tl" aria-hidden="true"></span>
+        <span class="kg-post tr" aria-hidden="true"></span>
+        <span class="kg-post bl" aria-hidden="true"></span>
+        <span class="kg-post br" aria-hidden="true"></span>
+        <div class="kg-topbar">
+          <span class="kg-plate">SEXTANT // DOPPLER LAB</span>
+          <button type="button" class="kg-fold-btn" id="btn-sextant-stow" aria-controls="kg-sextant-bays" aria-expanded="true">&#9660; STOW</button>
+        </div>
+        <div class="kg-station-bays" id="kg-sextant-bays">
+          <section class="kg-station-bay kg-optical-bay" aria-label="Optical scopes and spectrograph">
+            <div class="lh-skymap-wrap lh-chrono-bezel" id="lh-skymap-wrap">
+              <svg id="lh-skymap-svg" class="lh-skymap-svg" viewBox="0 0 236 112" role="img" aria-label="Bow and stern sky radar hemispheres"></svg>
+            </div>
+            <div class="kg-scope-slot" id="kg-scope-sextant">
+              <div class="kg-scope-bay" id="kg-scope-bay">
+                <div class="kg-crt-bezel">
+                  <span class="kg-post tl" aria-hidden="true"></span>
+                  <span class="kg-post tr" aria-hidden="true"></span>
+                  <span class="kg-post bl" aria-hidden="true"></span>
+                  <span class="kg-post br" aria-hidden="true"></span>
+                  <div class="kg-crt-well">
+                    <canvas id="kg-scope-canvas" class="kg-scope-canvas" width="320" height="320" aria-label="P1 green phosphor oscilloscope. Scroll zooms wavelength; hover reads nm; double-click resets."></canvas>
+                  </div>
+                </div>
+                <div class="kg-scope-modes" role="group" aria-label="Oscilloscope mode">
+                  <button type="button" class="kg-mini-btn" data-osc-mode="spec" aria-pressed="true" title="Target Doppler spectrum">SPEC</button>
+                  <button type="button" class="kg-mini-btn" data-osc-mode="lamp" aria-pressed="false" title="Internal H-I rest reference lamp">H-I REF</button>
+                  <button type="button" class="kg-mini-btn" data-osc-mode="vec" aria-pressed="false" title="Velocity &amp; rapidity vector scope">VEC</button>
+                </div>
+                <div class="kg-scope-tuner" aria-label="Oscilloscope wavelength tuning">
+                  <div class="kg-scope-readout" id="kg-scope-readout">H-&alpha; 656.3 nm &middot; D 1.00</div>
+                  <div class="kg-scope-tune-row" role="group" aria-label="Wavelength span">
+                    <button type="button" class="kg-mini-btn" id="btn-osc-zin" title="Narrow wavelength span">&lambda;&minus;</button>
+                    <button type="button" class="kg-mini-btn" id="btn-osc-rst" title="Reset visible spectrum window">RST &lambda;</button>
+                    <button type="button" class="kg-mini-btn" id="btn-osc-zout" title="Widen wavelength span">&lambda;+</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+          <section class="kg-station-bay" aria-label="Doppler lock telemetry and controls">
+            <h3 class="kg-bay-legend">DOPPLER LOCK</h3>
+            <div class="kg-el-grid" aria-live="polite">
+              <div class="kg-el-cell"><span class="kg-el-k">LOCK</span><span class="kg-el-v" id="el-target-val">&mdash;</span><span class="kg-el-sub" id="el-target-sub">SNAP NEAREST TO ACQUIRE</span></div>
+              <div class="kg-el-cell is-violet"><span class="kg-el-k">DOPPLER D (&lambda;/&lambda;&#8320;)</span><span class="kg-el-v" id="el-line-val">&mdash;</span><span class="kg-el-sub" id="el-line-sub">H-&alpha; 656.3 nm REF</span></div>
+              <div class="kg-el-cell"><span class="kg-el-k">REL VELOCITY</span><span class="kg-el-v" id="el-rel-val">&mdash;</span><span class="kg-el-sub" id="el-rel-sub">&nbsp;</span></div>
+              <div class="kg-el-cell is-violet"><span class="kg-el-k">SHIP &beta; / &gamma;</span><span class="kg-el-v" id="el-world-val">0.000c</span><span class="kg-el-sub" id="el-world-sub">&gamma; 1.00</span></div>
+            </div>
+            <div class="kg-station-keys lh-sx-row-a">
+              <button type="button" class="kg-el-btn" id="btn-snap-star">SNAP NEAREST</button>
+              <button type="button" class="kg-el-btn is-primary" id="btn-sample-doppler">SAMPLE DOPPLER</button>
+              <button type="button" class="kg-switch" id="sw-ir" aria-pressed="false"><span class="kg-switch-led" aria-hidden="true"></span><span>IR ARRAY</span></button>
+              <button type="button" class="kg-switch" id="sw-autosolve" aria-pressed="true"><span class="kg-switch-led" aria-hidden="true"></span><span>AUTO-SOLVE</span></button>
+            </div>
+            <div class="kg-station-keys lh-sx-row-b">
+              <button type="button" class="kg-el-btn" id="btn-sx-plot">SET DEST</button>
+              <button type="button" class="kg-el-btn" id="btn-match-vel">MATCH VEL</button>
+            </div>
+          </section>
+          <section class="kg-station-bay" aria-label="Magnification and contacts">
+            <h3 class="kg-bay-legend">OPTICAL MAGNIFICATION</h3>
+            <div class="kg-station-keys" role="group" aria-label="Optical magnification">
+              <button type="button" class="kg-mini-btn" data-sx-mag="1" aria-pressed="true">MAG 1x</button>
+              <button type="button" class="kg-mini-btn" data-sx-mag="5" aria-pressed="false">MAG 5x</button>
+              <button type="button" class="kg-mini-btn" data-sx-mag="20" aria-pressed="false">MAG 20x</button>
+            </div>
+            <details class="kg-contact-drawer">
+              <summary class="kg-bay-legend">CONTACTS &amp; DOPPLER LOG</summary>
+              <div class="kg-contact-scroll" id="kg-contact-scroll">
+                <div class="lh-comms-card" id="lh-comms-card" hidden>
+                  <div class="lh-comms-head"><strong id="lh-comms-ship">CAPTAIN HAIL</strong><span id="lh-comms-carrier">TIGHTBEAM</span></div>
+                  <p class="lh-comms-meta" id="lh-comms-captain"></p>
+                  <p class="lh-comms-quote" id="lh-comms-quote"></p>
+                  <p class="lh-comms-rumor" id="lh-comms-rumor"></p>
+                  <button type="button" class="acidburn-button" id="btn-comms-plot" hidden>plot rumor star</button>
+                </div>
+                <p class="lh-sec-title">CORRIDOR CONTACTS</p>
+                <div class="lh-contact-list" id="lh-contacts-list"></div>
+                <p class="lh-sec-title">DOPPLER LOG</p>
+                <ul class="lh-vault-list" id="lh-log-list"></ul>
+              </div>
+            </details>
+          </section>
+        </div>
+      </footer>
+    </section>
+
+    <!-- ================= SCREEN: SHIP & VOYAGE ARCHIVE ================= -->
+    <section class="lh-screen lh-screen-center" id="lh-screen-archive" data-screen-panel="archive" aria-labelledby="lh-archive-title" hidden>
+      <div class="author-card lh-card lh-archive-card">
+        <div class="section-header lh-panel-head">
+          <h2 id="lh-archive-title">ARCHIVE // VESSELS &amp; VOYAGES</h2>
+          <div class="section-line"></div>
+          <button type="button" class="acidburn-button lh-back" data-screen-btn="helm" title="Close and return to helm [Esc]">close</button>
+        </div>
+        <div class="lh-panel-body lh-archive-body">
+          <div class="lh-archive-col">
+            <div class="lh-arc-save-grid">
+              <fieldset class="lh-arc-save">
+                <legend>SAVE SHIP BLUEPRINT</legend>
+                <input id="inp-arc-ship-name" class="lh-text-input" type="text" maxlength="64" placeholder="Vessel name" aria-label="Blueprint name">
+                <input id="inp-arc-ship-notes" class="lh-text-input" type="text" maxlength="280" placeholder="Notes (optional)" aria-label="Blueprint notes">
+                <button type="button" class="acidburn-button lh-launch-btn" id="btn-arc-save-ship">save blueprint</button>
+              </fieldset>
+              <fieldset class="lh-arc-save">
+                <legend>SAVE VOYAGE SNAPSHOT</legend>
+                <input id="inp-arc-voy-name" class="lh-text-input" type="text" maxlength="80" placeholder="Snapshot title (auto if blank)" aria-label="Snapshot title">
+                <input id="inp-arc-voy-notes" class="lh-text-input" type="text" maxlength="280" placeholder="Notes (optional)" aria-label="Snapshot notes">
+                <button type="button" class="acidburn-button lh-launch-btn" id="btn-arc-save-voyage">save snapshot</button>
+              </fieldset>
+            </div>
+            <p class="lh-share-feedback" id="lh-arc-feedback" role="status" hidden></p>
+            <div class="lh-arc-listhead">
+              <div class="lh-tabs" role="tablist" aria-label="Archive lists">
+                <button type="button" class="acidburn-button" role="tab" data-atab="vessels" aria-selected="true">vessels <span id="lh-arc-count-v">0</span></button>
+                <button type="button" class="acidburn-button" role="tab" data-atab="missions" aria-selected="false">voyages <span id="lh-arc-count-m">0</span></button>
+              </div>
+              <input id="inp-arc-filter" class="lh-text-input lh-arc-filter" type="search" placeholder="filter name / notes / system" aria-label="Filter archive">
+            </div>
+            <p class="lh-arc-lex" id="lh-arc-lex">agency.lastnpcalex.lighthugger.vessel</p>
+            <ul class="lh-archive-list" id="lh-arc-vessels" data-apanel="vessels" aria-label="Saved vessels"></ul>
+            <ul class="lh-archive-list" id="lh-arc-missions" data-apanel="missions" aria-label="Voyage snapshots" hidden></ul>
+          </div>
+          <div class="lh-archive-col">
+            <p class="lh-sec-title">RECORD INSPECTOR // com.atproto.repo.createRecord</p>
+            <div class="lh-arc-inspect-head">
+              <span id="lh-arc-inspect-title">CURRENT DRAFT (UNSAVED)</span>
+              <span class="lh-btn-row">
+                <button type="button" class="kg-mini-btn" id="btn-arc-preview-draft">DRAFT</button>
+                <button type="button" class="kg-mini-btn" id="btn-arc-copy-record">COPY</button>
+              </span>
+            </div>
+            <pre class="lh-code-preview" id="lh-atproto-preview" tabindex="0" aria-label="ATProto createRecord JSON preview">{}</pre>
+            <p class="lh-sec-title">JSON / LH3 TRANSFER</p>
+            <textarea id="txt-arc-import" class="lh-text-input lh-arc-textarea" rows="4" spellcheck="false" placeholder="Paste an archive bundle (lighthugger-archive-v1), a single ATProto vessel/mission record, or an LH3- share code" aria-label="Import archive text"></textarea>
+            <div class="lh-btn-row">
+              <button type="button" class="acidburn-button" id="btn-arc-import">import</button>
+              <label class="acidburn-button lh-file-btn" for="file-arc-import">load .json</label>
+              <input type="file" id="file-arc-import" class="lh-file-input" accept=".json,application/json,text/plain">
+              <button type="button" class="acidburn-button" id="btn-arc-export">download json</button>
+              <button type="button" class="acidburn-button" id="btn-arc-export-text">show bundle</button>
+            </div>
+            <details class="lh-atp-drawer" id="lh-atp-drawer">
+              <summary>ATPROTO // HANDLE, PDS &amp; OAUTH STATUS</summary>
+              <div class="lh-readout lh-atp-status" id="lh-atp-status">Checking environment&hellip;</div>
+              <div class="lh-atp-form">
+                <input id="inp-atp-handle" class="lh-text-input" type="text" autocomplete="username" placeholder="handle.bsky.social or did:plc:..." aria-label="ATProto handle or DID">
+                <input id="inp-atp-pds" class="lh-text-input" type="url" placeholder="PDS URL (auto from handle)" aria-label="PDS URL">
+                <input id="inp-atp-secret" class="lh-text-input" type="password" autocomplete="current-password" placeholder="App password or access JWT" aria-label="App password or access JWT">
+              </div>
+              <div class="lh-btn-grid lh-atp-btns">
+                <button type="button" class="kg-el-btn" id="btn-atp-resolve">RESOLVE HANDLE</button>
+                <button type="button" class="kg-el-btn" id="btn-atp-oauth">PREPARE OAUTH</button>
+                <button type="button" class="kg-el-btn" id="btn-atp-connect">CONNECT (APP PW)</button>
+                <button type="button" class="kg-el-btn" id="btn-atp-disconnect">DISCONNECT</button>
+                <button type="button" class="kg-el-btn" id="btn-atp-stage">STAGE FOR SYNC</button>
+                <button type="button" class="kg-el-btn is-primary" id="btn-atp-sync">SYNC OUTBOX</button>
+                <button type="button" class="kg-el-btn" id="btn-atp-pull">PULL PDS</button>
+                <button type="button" class="kg-el-btn" id="btn-atp-refresh">REFRESH STATUS</button>
+              </div>
+              <p class="lh-atp-link" id="lh-atp-link" hidden></p>
+              <p class="lh-sec-title">SYNC OUTBOX</p>
+              <ul class="lh-archive-list lh-atp-outbox" id="lh-atp-outbox"></ul>
+            </details>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= SCREEN: CAPTAIN'S MANUAL ================= -->
+    <section class="lh-screen lh-screen-center" id="lh-screen-manual" data-screen-panel="manual" aria-labelledby="lh-manual-title" hidden>
+      <div class="author-card lh-card lh-manual-card">
+        <div class="section-header lh-panel-head">
+          <h2 id="lh-manual-title">CAPTAIN&rsquo;S MANUAL</h2>
+          <div class="section-line"></div>
+          <button type="button" class="acidburn-button lh-back" data-screen-btn="helm" title="Close and return to helm [Esc]">close</button>
+        </div>
+        <div class="lh-tabs" role="tablist" aria-label="Manual chapters">
+          <button type="button" class="acidburn-button" role="tab" data-mtab="orbits" aria-selected="true">orbits</button>
+          <button type="button" class="acidburn-button" role="tab" data-mtab="rockets" aria-selected="false">conjoiner drives</button>
+          <button type="button" class="acidburn-button" role="tab" data-mtab="ice" aria-selected="false">ice &amp; docking</button>
+          <button type="button" class="acidburn-button" role="tab" data-mtab="controls" aria-selected="false">controls</button>
+          <button type="button" class="acidburn-button" role="tab" data-mtab="about" aria-selected="false">about</button>
+        </div>
+        <div class="lh-panel-body lh-manual-body">
+          <article data-mpanel="orbits">
+            <h3>01 // KEPLERIAN ORBITS</h3>
+            <p>Undocking drops you into a circular orbit at station altitude. Your path is a conic around the current primary: <strong>PE</strong> (periapsis) is the low point, <strong>AP</strong> (apoapsis) the high point. Burning <strong>prograde</strong> at PE raises AP; burning <strong>retrograde</strong> at AP lowers PE. Burning <strong>normal</strong> tilts the plane.</p>
+            <p>Open <strong>ORBIT NAV [N]</strong>. The <span class="c-green">green</span> ellipse is where you are now, the <span class="c-cyan">cyan dashed</span> arc is the predicted transfer, and the <span class="c-gold">gold</span> ring is the target. Pick a target orbit: the panel previews total &Delta;v, transfer time and the burn duration at sustained thrust. &Delta;v is pure kinematics here; the Conjoiner drive draws no propellant, so no budget blocks a burn. <strong>PLOT &amp; AUTO-BURN</strong> flies a two-burn Hohmann transfer (or a guided continuous burn) and warps to each node if AUTO-WARP is ticked.</p>
+            <p>The <strong>SOI</strong> switch moves the frame between the planet and the host star. Escape the planet to fly between worlds at heliocentric scale.</p>
+          </article>
+          <article data-mpanel="rockets" hidden>
+            <h3>02 // CONJOINER DRIVES &amp; BRAKING ARCHITECTURE</h3>
+            <p>At constant proper acceleration <em>a</em>, rapidity grows linearly: &eta; = a&tau;/c, &beta; = tanh &eta;, &gamma; = cosh &eta;. Ship time &Delta;&tau; is far shorter than galactic time &Delta;t.</p>
+            <p><strong>Braking depends on your ice shield:</strong> vessels with a <strong>single bow ice cone</strong> keep their ice prow locked forward into the interstellar hydrogen medium and slow down with <strong>reverse thrust (&minus;g)</strong> from forward deceleration ports &mdash; they never flip 180&deg;. Only vessels with <strong>ice on both ends (Bi-Cone / Twin-Ram)</strong> execute a <strong>180&deg; flip-and-burn</strong> at midpoint, pointing their aft ice shield and main aft engine bells forward to decelerate.</p>
+            <p>The Conjoiner drive is <strong>reactionless</strong>: it taps the vacuum and throws no reaction mass, so ship mass stays constant and &Delta;v capacity is unlimited. The operational limits are <strong>core waste heat</strong> (climbs steeply above 1.5g; cooled by fins, spin rings, and articulated radiator wings) and <strong>interstellar hydrogen (H-I) ablation</strong>. Use the <strong>Cruise &beta; cap</strong> slider in STARMAP [M] to cap peak &gamma; and protect your ice cone across long voyages.</p>
+          </article>
+          <article data-mpanel="ice" hidden>
+            <h3>03 // HYDROGEN MEDIUM (H-I ISM), ICE &amp; DOCKING</h3>
+            <p>Interstellar neutral hydrogen (H-I) and dust strike the ship at relativistic energies &prop; (&gamma;&minus;1), with ram flux rising as &beta;&gamma;. With unlimited vacuum-tap thrust, the cryo-ice shield is the consumable that bounds every interstellar run. Keep an ice-armored prow aimed into the hydrogen medium: bow-ice hulls brake via reverse thrust (&minus;g), while dual-ice bi-cone hulls flip 180&deg; onto their aft ice cone. In the Sextant [X], the <strong>H-I REF</strong> lamp overlays rest Balmer lines (H-&alpha; 656.3 nm) against Doppler-shifted target spectra.</p>
+            <p>To repair: arrive in system, match the station orbit (STATION RENDEZVOUS in ORBIT NAV [N]), close inside the dock corridor, and press <strong>DOCK &amp; RE-GLAZE</strong>. In DRYDOCK [Y], <strong>RE-GLAZE &amp; COOL</strong> restores ice to 100% and cools the core. Hull refits can be previewed anywhere and commissioned while berthed for &#8373; credits.</p>
+          </article>
+          <article data-mpanel="controls" hidden>
+            <h3>04 // CONTROLS</h3>
+            <dl class="lh-keys">
+              <div><dt>Esc</dt><dd>Settings modal / close overlay</dd></div>
+              <div><dt>N M Y X ?</dt><dd>Orbit nav, starmap, drydock, sextant, manual</dd></div>
+              <div><dt>A / Shift+A</dt><dd>Archive (Shift+A on helm and sextant)</dd></div>
+              <div><dt>K</dt><dd>Knight KG-2100 console</dd></div>
+              <div><dt>W / S</dt><dd>Torch up / down (&minus;g brakes)</dd></div>
+              <div><dt>A D / Arrows</dt><dd>Yaw / pitch (3-axis manual helm)</dd></div>
+              <div><dt>LMB Drag</dt><dd>Pilot mode: pitch up/down &amp; yaw</dd></div>
+              <div><dt>LMB Click</dt><dd>Pilot mode + WPN armed: fire weapons</dd></div>
+              <div><dt>RMB Drag</dt><dd>Rotate camera freely while piloting</dd></div>
+              <div><dt>Z C / , .</dt><dd>Roll port / starboard (bank ship &amp; horizon)</dd></div>
+              <div><dt>F</dt><dd>Reverse brake (bow-ice) / Flip 180&deg; (dual-ice)</dd></div>
+              <div><dt>0</dt><dd>All stop</dd></div>
+              <div><dt>1 - 6</dt><dd>Warp 1&times; / 100&times; / 10k&times; / 1M&times; / ISTL / HYPR</dd></div>
+              <div><dt>H / R / G</dt><dd>Toggle Fighter HUD, Relativistic Nav HUD, Weapons HUD</dd></div>
+              <div><dt>L / U / V</dt><dd>Toggle chase cam lock / hide hull / 3D orbit curve</dd></div>
+              <div><dt>Space Q Tab</dt><dd>WPN: fire, AI missiles, cycle lock (Sextant: Space/T/P/H)</dd></div>
+              <div><dt>Puck</dt><dd>Drag to steer or orbit the camera</dd></div>
+            </dl>
+            <div class="lh-btn-row" style="margin-top:10px;">
+              <button type="button" class="acidburn-button" id="btn-manual-tutorial">REPLAY FLIGHT WALKTHROUGH</button>
+            </div>
+          </article>
+          <article data-mpanel="about" hidden>
+            <h3>05 // ABOUT LAMINAR</h3>
+            <p><strong>LAMINAR</strong> is a relativistic Conjoiner lighthugger simulator built around physical constraints: 3+ km procedurally engineered torchships, fuel-free Keplerian orbital transfers, Lorentz starlight aberration &amp; Doppler spectroscopy, interstellar H-I ice ablation shielding, and orbital combat.</p>
+            <div class="lh-about-links">
+              <a class="acidburn-button lh-launch-btn" id="lnk-manual-github" href="https://github.com/lastnpcalex/laminar" target="_blank" rel="noopener noreferrer">GITHUB // LASTNPCALEX/LAMINAR</a>
+              <a class="acidburn-button" id="lnk-manual-site" href="https://laminar.lastnpcalex.agency" target="_blank" rel="noopener noreferrer">LAMINAR.LASTNPCALEX.AGENCY</a>
+            </div>
+            <p class="lh-sec-title">RENDERED GALLERY</p>
+            <div class="lh-about-gallery" id="lh-about-gallery">
+              <figure class="lh-about-shot"><img src="prototypes/lighthugger/screenshots/step-01-architect.jpg" alt="Ship Architect and Drydock" width="960" height="540"><figcaption>01 // SHIP ARCHITECT &amp; DRYDOCK</figcaption></figure>
+              <figure class="lh-about-shot"><img src="prototypes/lighthugger/screenshots/step-02-helm.jpg" alt="Helm flight past Titan Cryo-Spindle" width="960" height="540"><figcaption>02 // FREE HELM &amp; FLIGHT HUD</figcaption></figure>
+              <figure class="lh-about-shot"><img src="prototypes/lighthugger/screenshots/step-03-orbits.jpg" alt="Orbit Navigator 3D chronoscope" width="960" height="540"><figcaption>03 // KEPLERIAN ORBIT NAV [N]</figcaption></figure>
+              <figure class="lh-about-shot"><img src="prototypes/lighthugger/screenshots/step-04-starmap.jpg" alt="3D Galactic Starmap" width="960" height="540"><figcaption>04 // 3D STARMAP &amp; 50 LY FRONTIER</figcaption></figure>
+              <figure class="lh-about-shot"><img src="prototypes/lighthugger/screenshots/step-05-relativistic.jpg" alt="Relativistic Cherenkov bow shock" width="960" height="540"><figcaption>05 // RELATIVISTIC CHERENKOV BOW</figcaption></figure>
+              <figure class="lh-about-shot"><img src="prototypes/lighthugger/screenshots/step-06-combat.jpg" alt="Orbital combat near Saturn" width="960" height="540"><figcaption>06 // ORBITAL COMBAT &amp; MISSILES</figcaption></figure>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- Non-overlapping top-center notification stack (warnings, arrival toasts, action flashes) -->
+    <div class="lh-notice-stack" id="lh-notice-stack">
+      <div class="lh-warning" id="lh-warning" role="alert" hidden data-level="elevated">
+        <div id="lh-warn">
+          <strong id="lh-warning-title">ISM ABLATION</strong>
+          <span id="lh-warning-text"></span>
+        </div>
+      </div>
+      <div class="lh-epoch-toast" id="lh-epoch-toast" hidden role="status" aria-live="polite">
+        <div class="lh-epoch-toast-head">
+          <strong id="lh-toast-title">ARRIVAL</strong>
+          <button type="button" class="kg-mini-btn" id="btn-close-toast" aria-label="Dismiss">&times;</button>
+        </div>
+        <p id="lh-toast-meta" class="lh-epoch-toast-meta"></p>
+        <p id="lh-toast-body" class="lh-epoch-toast-body"></p>
+      </div>
+      <div class="lh-flash" id="lh-flash" role="status" aria-live="polite" hidden></div>
+    </div>
+
+    <!-- Clean Screenshot Mode hover-only restore pill -->
+    <button type="button" class="acidburn-button lh-photo-exit" id="btn-photo-exit" hidden aria-label="Show UI overlays [Esc or Shift+H]">SHOW UI <kbd>Shift+H</kbd></button>
+
+    <!-- Quick Audio Mixer Popover (Topbar Speaker Button) -->
+    <section class="lh-audio-pop" id="lh-audio-popover" role="dialog" aria-modal="false" aria-labelledby="lh-pop-audio-title" hidden>
+      <header class="lh-audio-pop-head">
+        <h2 id="lh-pop-audio-title">AUDIO MIXER</h2>
+        <div class="lh-audio-pop-acts">
+          <button type="button" class="acidburn-button lh-pop-tog" id="btn-pop-audio-mute" aria-pressed="true">AUDIO ON</button>
+          <button type="button" class="acidburn-button lh-pop-tog" id="btn-pop-audio-reverb" aria-pressed="true">IR ON</button>
+          <button type="button" class="kg-mini-btn" id="btn-pop-audio-close" aria-label="Close audio mixer [Esc]">&times;</button>
+        </div>
+      </header>
+      <div class="lh-audio-pop-body">
+        <label class="lh-pop-row">
+          <span>MASTER <output id="out-pop-master">78%</output></span>
+          <input type="range" class="lh-set-range" id="rng-pop-master" min="0" max="100" value="78" aria-label="Master audio volume">
+        </label>
+        <label class="lh-pop-row">
+          <span>MUSIC <output id="out-pop-music">68%</output></span>
+          <input type="range" class="lh-set-range" id="rng-pop-music" min="0" max="100" value="68" aria-label="Ambient space music volume">
+        </label>
+        <label class="lh-pop-row">
+          <span>DRIVE / HULL <output id="out-pop-drive">78%</output></span>
+          <input type="range" class="lh-set-range" id="rng-pop-drive" min="0" max="100" value="78" aria-label="Drive and hull volume">
+        </label>
+        <label class="lh-pop-row" title="Sonified plasma &amp; radio emissions from NASA Cassini RPWS (Saturn/Jupiter) + Van Allen Probes EMFISIS chorus + bow-shock shimmer">
+          <span>SPACE RADIO <output id="out-pop-amb">32%</output></span>
+          <input type="range" class="lh-set-range" id="rng-pop-amb" min="0" max="100" value="32" aria-label="NASA space radio volume">
+        </label>
+        <label class="lh-pop-row">
+          <span>UI &amp; ALERTS <output id="out-pop-ui">85%</output></span>
+          <input type="range" class="lh-set-range" id="rng-pop-ui" min="0" max="100" value="85" aria-label="UI clicks and alert volume">
+        </label>
+      </div>
+      <footer class="lh-audio-pop-foot">
+        <p class="lh-pop-layers" id="lh-pop-layers">ACTIVE LAYERS: STANDBY</p>
+        <p class="lh-pop-tip">SPACE RADIO: NASA Cassini RPWS / EMFISIS plasma waves</p>
+        <p class="lh-pop-tip">Right-click speaker icon or [Shift+M] to mute</p>
+      </footer>
+    </section>
+
+    <!-- Settings & Graphics Modal [Esc on Helm/Menu or Gear button] -->
+    <div class="lh-settings-backdrop" id="lh-settings-modal" role="dialog" aria-modal="true" aria-labelledby="lh-settings-title" hidden>
+      <div class="lh-settings-card">
+        <span class="kg-screw tl" aria-hidden="true"></span>
+        <span class="kg-screw tr" aria-hidden="true"></span>
+        <span class="kg-screw bl" aria-hidden="true"></span>
+        <span class="kg-screw br" aria-hidden="true"></span>
+        <header class="lh-settings-head">
+          <span class="kg-plate">KG-2100</span>
+          <h2 id="lh-settings-title">SETTINGS // GRAPHICS, AUDIO &amp; FLIGHT</h2>
+          <button type="button" class="kg-mini-btn lh-settings-x" id="btn-settings-close" aria-label="Close settings [Esc]">&times;</button>
+        </header>
+        <div class="lh-settings-body">
+          <div class="lh-set-row">
+            <div class="lh-set-label">
+              <strong>ANTI-ALIASING</strong>
+              <span>Hardware MSAA, shader FXAA, or supersampled post-pass</span>
+            </div>
+            <div class="lh-seg" role="group" aria-label="Anti-aliasing mode">
+              <button type="button" class="acidburn-button" data-gfx-aa="off" aria-pressed="false">OFF</button>
+              <button type="button" class="acidburn-button" data-gfx-aa="fxaa" aria-pressed="false">FXAA</button>
+              <button type="button" class="acidburn-button" data-gfx-aa="msaa4" aria-pressed="true">MSAA 4&times;</button>
+              <button type="button" class="acidburn-button" data-gfx-aa="ssaa2" aria-pressed="false">SSAA+FXAA</button>
+            </div>
+          </div>
+          <div class="lh-set-row">
+            <div class="lh-set-label">
+              <strong>RENDER SCALE</strong>
+              <span>Internal framebuffer sharpness multiplier</span>
+            </div>
+            <div class="lh-seg" role="group" aria-label="Render resolution scale">
+              <button type="button" class="acidburn-button" data-gfx-scale="1" aria-pressed="true">1.0&times;</button>
+              <button type="button" class="acidburn-button" data-gfx-scale="1.5" aria-pressed="false">1.5&times;</button>
+              <button type="button" class="acidburn-button" data-gfx-scale="2" aria-pressed="false">2.0&times;</button>
+            </div>
+          </div>
+          <div class="lh-set-row">
+            <div class="lh-set-label">
+              <strong>SHOWCASE AUTO-ORBIT</strong>
+              <span>Continuous menu camera orbit (pauses while dragging or editing hull)</span>
+            </div>
+            <button type="button" class="acidburn-button lh-set-tog" id="btn-set-autoorbit" aria-pressed="true">AUTO-ORBIT ON</button>
+          </div>
+          <div class="lh-set-row">
+            <div class="lh-set-label">
+              <strong>3D ORBITAL OVERLAY [V]</strong>
+              <span>Default OFF on Helm; toggle trajectories &amp; burn gates on demand</span>
+            </div>
+            <button type="button" class="acidburn-button lh-set-tog" id="btn-set-vectors" aria-pressed="false">3D ORB OFF</button>
+          </div>
+          <div class="lh-set-row">
+            <div class="lh-set-label">
+              <strong>LAUNCH WALKTHROUGH</strong>
+              <span>Show quick interactive flight briefing automatically at launch</span>
+            </div>
+            <div class="lh-seg" role="group" aria-label="Launch walkthrough">
+              <button type="button" class="acidburn-button lh-set-tog" id="btn-set-tut-auto" aria-pressed="true">ON LAUNCH: ON</button>
+              <button type="button" class="acidburn-button" id="btn-set-tut-open">OPEN GUIDE</button>
+            </div>
+          </div>
+          <div class="lh-set-row">
+            <div class="lh-set-label">
+              <strong>AUDIO ENGINE [Shift+M]</strong>
+              <span>Ambient space music, sculpted NASA PD stems &amp; hull reverb</span>
+            </div>
+            <div class="lh-seg" role="group" aria-label="Audio engine controls">
+              <button type="button" class="acidburn-button lh-set-tog" id="btn-set-audio-mute" aria-pressed="true">AUDIO ON</button>
+              <button type="button" class="acidburn-button lh-set-tog" id="btn-set-audio-reverb" aria-pressed="true">HULL IR ON</button>
+            </div>
+          </div>
+          <div class="lh-set-row">
+            <div class="lh-set-label">
+              <strong>MASTER VOLUME</strong>
+              <span>Overall web audio mix level</span>
+            </div>
+            <div class="lh-set-slider-wrap">
+              <input type="range" class="lh-set-range" id="rng-audio-master" min="0" max="100" value="78" aria-label="Master audio volume">
+              <output class="lh-set-val" id="out-audio-master">78%</output>
+            </div>
+          </div>
+          <div class="lh-set-row lh-set-submix-row">
+            <div class="lh-set-submix" role="group" aria-label="Audio sub-mix levels">
+              <label class="lh-set-sub">
+                <span>MUSIC <output id="out-audio-music">68%</output></span>
+                <input type="range" class="lh-set-range" id="rng-audio-music" min="0" max="100" value="68" aria-label="Ambient space music volume">
+              </label>
+              <label class="lh-set-sub">
+                <span>DRIVE / HULL <output id="out-audio-drive">78%</output></span>
+                <input type="range" class="lh-set-range" id="rng-audio-drive" min="0" max="100" value="78" aria-label="Drive and hull bus volume">
+              </label>
+              <label class="lh-set-sub" title="Sonified plasma &amp; radio emissions from NASA Cassini RPWS (Saturn/Jupiter) + Van Allen Probes EMFISIS chorus + bow-shock shimmer">
+                <span>SPACE RADIO <output id="out-audio-amb">32%</output></span>
+                <input type="range" class="lh-set-range" id="rng-audio-amb" min="0" max="100" value="32" aria-label="Space radio bus volume">
+              </label>
+              <label class="lh-set-sub">
+                <span>UI &amp; ALERTS <output id="out-audio-ui">85%</output></span>
+                <input type="range" class="lh-set-range" id="rng-audio-ui" min="0" max="100" value="85" aria-label="UI and alert SFX bus volume">
+              </label>
+            </div>
+            <p class="lh-set-audio-meta" id="lh-audio-status">NASA PD STEMS + SPACE MUSIC: LOADING // 25 STEMS</p>
+          </div>
+          <div class="lh-set-row">
+            <div class="lh-set-label">
+              <strong>LAMINAR REPOSITORY</strong>
+              <span>Source code &amp; standalone deployment &middot; laminar.lastnpcalex.agency</span>
+            </div>
+            <div class="lh-set-acts">
+              <a class="acidburn-button" id="lnk-set-github" href="https://github.com/lastnpcalex/laminar" target="_blank" rel="noopener noreferrer">GITHUB REPO</a>
+            </div>
+          </div>
+        </div>
+        <footer class="lh-settings-foot">
+          <button type="button" class="acidburn-button" id="btn-set-menu">MAIN MENU</button>
+          <button type="button" class="acidburn-button lh-launch-btn" id="btn-set-close">RESUME [Esc]</button>
+        </footer>
+      </div>
+    </div>
+
+    <!-- Interactive Launch Walkthrough Modal (togglable in Menu, Manual & Settings) -->
+    <div class="lh-tutorial-backdrop" id="lh-tutorial-modal" role="dialog" aria-modal="true" aria-labelledby="lh-tut-title" hidden>
+      <div class="lh-tutorial-card">
+        <span class="kg-screw tl" aria-hidden="true"></span>
+        <span class="kg-screw tr" aria-hidden="true"></span>
+        <span class="kg-screw bl" aria-hidden="true"></span>
+        <span class="kg-screw br" aria-hidden="true"></span>
+        <header class="lh-tut-head">
+          <span class="kg-plate">KG-2100 // FLIGHT BRIEFING</span>
+          <span class="lh-tut-step-badge" id="lh-tut-step-badge">STEP 1 / 6</span>
+          <button type="button" class="kg-mini-btn lh-settings-x" id="btn-tut-close" aria-label="Close walkthrough [Esc]">&times;</button>
+        </header>
+        <div class="lh-tut-body">
+          <p class="lh-tut-tag" id="lh-tut-tag">01 // SHIP ARCHITECT &amp; WEAPONS</p>
+          <h2 id="lh-tut-title">DESIGN YOUR LIGHTHUGGER</h2>
+          <figure class="lh-tut-media">
+            <img id="lh-tut-img" src="prototypes/lighthugger/screenshots/step-01-architect.jpg" alt="Drydock and Ship Architect preview" width="960" height="540">
+          </figure>
+          <div class="lh-tut-copy" id="lh-tut-body"></div>
+          <div class="lh-tut-dots" id="lh-tut-dots" role="tablist" aria-label="Walkthrough steps"></div>
+        </div>
+        <footer class="lh-tut-foot">
+          <label class="lh-tut-check">
+            <input type="checkbox" id="chk-tut-launch" checked>
+            <span>Show walkthrough on launch</span>
+          </label>
+          <div class="lh-tut-acts">
+            <button type="button" class="acidburn-button" id="btn-tut-skip">SKIP</button>
+            <button type="button" class="acidburn-button" id="btn-tut-prev" disabled>PREV</button>
+            <button type="button" class="acidburn-button lh-launch-btn" id="btn-tut-next">NEXT</button>
+          </div>
+        </footer>
+      </div>
+    </div>
+
+    <!-- Vessel Lost / Catastrophic Impact Recovery Overlay -->
+    <div class="lh-wreck-backdrop" id="lh-wreck-overlay" role="alertdialog" aria-modal="true" aria-labelledby="lh-wreck-title" hidden>
+      <div class="lh-wreck-card">
+        <span class="kg-screw tl" aria-hidden="true"></span>
+        <span class="kg-screw tr" aria-hidden="true"></span>
+        <span class="kg-screw bl" aria-hidden="true"></span>
+        <span class="kg-screw br" aria-hidden="true"></span>
+        <p class="lh-rack-plate"><span>KG-2100 // EMERGENCY</span><span>HULL LOSS TELEMETRY</span></p>
+        <h2 class="lh-wreck-title" id="lh-wreck-title">VESSEL LOST</h2>
+        <p class="lh-wreck-reason" id="lh-wreck-reason">Catastrophic hull failure.</p>
+        <p class="lh-wreck-meta" id="lh-wreck-meta">SOL &middot; EPOCH 2370.00</p>
+        <div class="lh-wreck-actions">
+          <button type="button" class="acidburn-button lh-launch-btn" id="btn-wreck-recommission">RECOMMISSION AT STATION</button>
+          <button type="button" class="acidburn-button" id="btn-wreck-menu">MAIN MENU</button>
+        </div>
+      </div>
+    </div>
+
+    <noscript>This interactive flight game requires JavaScript.</noscript>
+  </main>
+
+  <script id="vertex-shader" type="x-shader/x-vertex">void main() { gl_Position = vec4(position, 1.0); }</script>
+  <script data-src="shared/raytracer.glsl" data-name="raytracer" type="x-shader/x-fragment"></script>
+</body>
+</html>

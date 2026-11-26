@@ -1,0 +1,309 @@
+/**
+ * ACIDBURN MODE TOGGLE
+ * 
+ * Shared display modes, with direct choices in navigation and a legacy cyclic button.
+ */
+
+(function() {
+    'use strict';
+
+    const body = document.body;
+    // Start quietly on every device; an explicitly saved display choice wins.
+    const savedMode = localStorage.getItem('acidburn-mode');
+    let currentMode = savedMode || 'dark';
+    
+    console.log(`[ACIDBURN Mode] Init: saved=${savedMode}, current=${currentMode}`);
+    
+    let lastStaticMode = localStorage.getItem('acidburn-static-mode') || 'dark';
+    let webglSupported = true;
+    let glitchInterval = null;
+    
+    // Icons configuration
+    const MODE_INFO = {
+        'bh': { icon: 'img/Black-Hole.svg', label: 'Black Hole', title: 'Black Hole Mode', next: 'dark' },
+        'dark': { icon: 'img/Dark-Mode.svg', label: 'Dark', title: 'Dark Mode', next: 'light' },
+        'light': { icon: 'img/Light-Mode.svg', label: 'Light', title: 'Light Mode', next: 'bh' }
+    };
+
+    // Sanitize stale localStorage values from previous versions
+    if (!MODE_INFO[currentMode]) currentMode = 'dark';
+    if (!MODE_INFO[lastStaticMode]) lastStaticMode = 'dark';
+    
+    // ═══════════════════════════════════════════════════════════════
+    // DETECTION
+    // ═══════════════════════════════════════════════════════════════
+    
+    function detectCapabilities() {
+        try {
+            const canvas = document.createElement('canvas');
+            webglSupported = !!(window.WebGLRenderingContext && 
+                (canvas.getContext('webgl') || canvas.getContext('experimental-webgl')));
+        } catch(e) {
+            webglSupported = false;
+        }
+    }
+    
+    // ═══════════════════════════════════════════════════════════════
+    // MODE APPLICATION
+    // ═══════════════════════════════════════════════════════════════
+    
+    function cycleMode() {
+        const postView = document.getElementById('post-view');
+        const isReading = !!(postView && postView.classList.contains('active'));
+        
+        if (isReading) {
+            // If reading, we only toggle between static modes
+            const nextStatic = (lastStaticMode === 'dark') ? 'light' : 'dark';
+            
+            // If current global mode is BH, keep it BH but update the last static preference
+            // If current was already a static mode, update it to the new one
+            const newGlobal = (currentMode === 'bh') ? 'bh' : nextStatic;
+            
+            lastStaticMode = nextStatic;
+            localStorage.setItem('acidburn-static-mode', nextStatic);
+            applyMode(newGlobal);
+        } else {
+            // Normal cycling on main pages
+            let nextMode = MODE_INFO[currentMode].next;
+            applyMode(nextMode);
+        }
+    }
+
+    function applyMode(mode) {
+        currentMode = mode;
+        localStorage.setItem('acidburn-mode', mode);
+        
+        if (mode === 'dark' || mode === 'light') {
+            lastStaticMode = mode;
+            localStorage.setItem('acidburn-static-mode', mode);
+        }
+
+        // Clean slate
+        body.classList.remove('bh-mode', 'dark-mode', 'light-mode', 'lite-mode', 'light-reading');
+        
+        // Context: Are we reading a post?
+        const postView = document.getElementById('post-view');
+        const isReading = !!(postView && postView.classList.contains('active'));
+
+        let effectiveMode = mode;
+        if (isReading && mode === 'bh') {
+            effectiveMode = lastStaticMode;
+        }
+
+        // Apply effective mode class
+        body.classList.add(effectiveMode + '-mode');
+        
+        if (effectiveMode === 'bh') {
+            startEffects();
+        } else {
+            stopEffects();
+            body.classList.add('lite-mode');
+            if (effectiveMode === 'light') {
+                body.classList.add('light-reading');
+            }
+        }
+
+        updateToggleUI();
+        
+        window.dispatchEvent(new CustomEvent('acidburn-mode-change', { 
+            detail: { mode: effectiveMode, requestedMode: mode }
+        }));
+    }
+    
+    // ═══════════════════════════════════════════════════════════════
+    // EFFECTS
+    // ═══════════════════════════════════════════════════════════════
+    
+    function startEffects() {
+        if (body.hasAttribute('data-disable-bh-background')) return;
+        if (glitchInterval) return;
+        glitchInterval = setInterval(() => {
+            if (Math.random() > 0.85) {
+                body.classList.add('glitch');
+                setTimeout(() => body.classList.remove('glitch'), 100);
+            }
+        }, 3000);
+        
+        // The selected background renderer owns its texture animation lifecycle.
+    }
+    
+    function stopEffects() {
+        if (glitchInterval) {
+            clearInterval(glitchInterval);
+            glitchInterval = null;
+        }
+        body.classList.remove('glitch');
+        if (typeof AcidburnGalaxy !== 'undefined' && AcidburnGalaxy.stop) AcidburnGalaxy.stop();
+    }
+    
+    // ═══════════════════════════════════════════════════════════════
+    // UI CREATION
+    // ═══════════════════════════════════════════════════════════════
+    
+    function createToggleUI() {
+        const slot = document.querySelector('#nav-menu .nav-mode-slot');
+        const existing = document.querySelector('.mode-toggle');
+        if (slot) {
+            const picker = existing || document.createElement('div');
+            if (!picker.classList.contains('mode-picker')) {
+                picker.className = 'mode-toggle mode-picker';
+                picker.innerHTML = `<span id="display-mode-label" class="mode-picker-label">Display</span>
+                    <div class="mode-options" role="group" aria-labelledby="display-mode-label">
+                        ${['dark', 'light', 'bh'].map(mode => `<button type="button" class="nav-link" data-display-mode="${mode}" aria-label="${MODE_INFO[mode].label}" aria-pressed="false"><span class="nav-link-label">${mode}</span></button>`).join('')}
+                    </div>
+                    <label class="mode-legacy-option"><input type="checkbox" id="bh-legacy"> Legacy black hole</label>
+                    <p class="mode-reading-note" hidden>BH is paused while reading.</p>`;
+                picker.querySelector('#bh-legacy').addEventListener('change', event => {
+                    localStorage.setItem('acidburn-bh-legacy', String(event.target.checked));
+                    window.dispatchEvent(new CustomEvent('acidburn-bh-style-change'));
+                });
+                picker.querySelectorAll('[data-display-mode]').forEach(button => {
+                    button.addEventListener('click', () => {
+                        const mode = button.dataset.displayMode;
+                        const isReading = document.getElementById('post-view')?.classList.contains('active');
+                        // Preserve the background preference when changing reading colors.
+                        if (isReading && currentMode === 'bh' && mode !== 'bh') {
+                            lastStaticMode = mode;
+                            localStorage.setItem('acidburn-static-mode', mode);
+                            applyMode('bh');
+                        } else {
+                            applyMode(mode);
+                        }
+                    });
+                });
+            }
+            slot.appendChild(picker);
+            updateToggleUI();
+            return;
+        }
+        if (existing) {
+            updateToggleUI();
+            return;
+        }
+        
+        const header = document.querySelector('.header-bar');
+        if (!header) return;
+
+        // Create opening bookend if it doesn't exist
+        if (!document.querySelector('.header-bookend-open')) {
+            const start = document.createElement('span');
+            start.className = 'header-bookend header-bookend-open';
+            start.textContent = '[';
+            // Insert at the very beginning of the header content
+            header.insertBefore(start, header.firstChild);
+        }
+
+        const toggle = document.createElement('div');
+        toggle.className = 'mode-toggle';
+        
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'mode-btn-icon cyclic-mode-btn';
+        btn.id = 'main-mode-toggle';
+        btn.addEventListener('click', cycleMode);
+        
+        toggle.appendChild(btn);
+        (slot || header).appendChild(toggle);
+
+        // Create closing bookend if it doesn't exist
+        if (!document.querySelector('.header-bookend-close')) {
+            const end = document.createElement('span');
+            end.className = 'header-bookend header-bookend-close';
+            end.textContent = ']';
+            header.appendChild(end);
+        }
+
+        updateToggleUI();
+    }
+    function updateToggleUI() {
+        const postView = document.getElementById('post-view');
+        const isReading = !!(postView && postView.classList.contains('active'));
+        
+        let displayMode = currentMode;
+        if (isReading && currentMode === 'bh') {
+            displayMode = lastStaticMode;
+        }
+
+        document.querySelectorAll('[data-display-mode]').forEach(button => {
+            const mode = button.dataset.displayMode;
+            button.setAttribute('aria-pressed', mode === displayMode);
+            button.classList.toggle('active', mode === displayMode);
+            button.disabled = isReading && mode === 'bh';
+            button.title = button.disabled ? 'BH is paused while reading' : MODE_INFO[mode].title;
+        });
+        const note = document.querySelector('.mode-reading-note');
+        const backgroundDisabled = body.hasAttribute('data-disable-bh-background');
+        if (note) {
+            note.hidden = !isReading && !backgroundDisabled;
+            note.textContent = backgroundDisabled ? 'BH background is paused in this viewer.' : 'BH is paused while reading.';
+        }
+        const legacy = document.getElementById('bh-legacy');
+        if (legacy) {
+            legacy.checked = localStorage.getItem('acidburn-bh-legacy') === 'true';
+            legacy.closest('label').hidden = currentMode !== 'bh' || backgroundDisabled;
+        }
+
+        const btn = document.getElementById('main-mode-toggle');
+        if (!btn) return;
+
+        const info = MODE_INFO[displayMode];
+        const nextMode = isReading ? (lastStaticMode === 'dark' ? 'light' : 'dark') : info.next;
+        btn.title = 'Switch to ' + MODE_INFO[nextMode].label;
+        btn.setAttribute('aria-label', 'Display: ' + info.label + '. ' + btn.title);
+        
+        // Find the absolute root path relative to this script
+        let rootPath = '';
+        const scripts = document.getElementsByTagName('script');
+        for (let s of scripts) {
+            if (s.src.includes('acidburn-mode.js')) {
+                // Get part before 'js/acidburn-mode.js'
+                rootPath = s.src.split('js/acidburn-mode.js')[0];
+                break;
+            }
+        }
+        
+        const iconUrl = rootPath + info.icon;
+
+        btn.innerHTML = `<img src="${iconUrl}" alt="" width="24" height="24"><span class="mode-toggle-label"><span class="mode-label-caption">Display</span><span class="mode-label-value">${info.label}</span></span>`;
+        
+        // Glow effect based on mode
+        btn.className = 'mode-btn-icon cyclic-mode-btn glow-' + displayMode + (btn.closest('.nav-mode-slot') ? ' nav-link' : '');
+    }
+    
+    // ═══════════════════════════════════════════════════════════════
+    // INITIALIZATION
+    // ═══════════════════════════════════════════════════════════════
+    
+    function init() {
+        detectCapabilities();
+        createToggleUI();
+        
+        // Listen for context changes (reading mode)
+        const postView = document.getElementById('post-view');
+        if (postView) {
+            const observer = new MutationObserver(() => {
+                // Re-apply current mode when reading state changes
+                // This ensures BH skips correctly and classes are updated
+                applyMode(currentMode);
+            });
+            observer.observe(postView, { attributes: true, attributeFilter: ['class'] });
+        }
+
+        applyMode(currentMode);
+    }
+    
+    // Both deferred and bottom-of-page script orders use the same control.
+    window.addEventListener('acidburn-nav-ready', createToggleUI);
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+    
+    window.AcidburnMode = {
+        setMode: applyMode,
+        getMode: () => currentMode,
+        cycle: cycleMode
+    };
+})();

@@ -1,0 +1,673 @@
+{
+  "version": 3,
+  "generatedBy": "build_stems.py",
+  "totalBytes": 2113940,
+  "stemCount": 25,
+  "stems": [
+    {
+      "id": "music-orbital",
+      "file": "stems/music-orbital.mp3",
+      "kind": "music",
+      "durationSec": 32.3,
+      "bytes": 323565,
+      "sha256": "26f973f778d6fca2c9099f4cba4da77e2c3715369efe3c61331300682bfae519",
+      "sources": [
+        {
+          "key": "sls_fire",
+          "title": "File:SLS Test Fire.mp3",
+          "credit": "NASA",
+          "license": "Public domain (PD-USGov-NASA)",
+          "url": "https://commons.wikimedia.org/wiki/File:SLS_Test_Fire.mp3"
+        },
+        {
+          "key": "saturn_rpws_1",
+          "title": "File:Saturn sound.ogg",
+          "credit": "NASA/JPL/University of Iowa",
+          "license": "Public domain (PD-USGov-NASA)",
+          "url": "https://commons.wikimedia.org/wiki/File:Saturn_sound.ogg"
+        },
+        {
+          "key": "perseverance_cruise",
+          "title": "File:Perseverance Rover's Interplanetary Sound.oga",
+          "credit": "NASA/JPL-Caltech/DPA",
+          "license": "Public domain (PD-USGov-NASA)",
+          "url": "https://commons.wikimedia.org/wiki/File:Perseverance_Rover%27s_Interplanetary_Sound.oga"
+        }
+      ],
+      "synthesis": "Original D Dorian 4-chord analog & Rhodes synthesis convolved with NASA ir-hull",
+      "loopStart": 0.12,
+      "loopEnd": 32.12
+    },
+    {
+      "id": "music-interstellar",
+      "file": "stems/music-interstellar.mp3",
+      "kind": "music",
+      "durationSec": 32.3,
+      "bytes": 323565,
+      "sha256": "d74450da41ebc7f506bb64d1d0925160dfe97b796f0ea4bd28a5203017060a53",
+      "sources": [
+        {
+          "key": "sls_fire",
+          "title": "File:SLS Test Fire.mp3",
+          "credit": "NASA",
+          "license": "Public domain (PD-USGov-NASA)",
+          "url": "https://commons.wikimedia.org/wiki/File:SLS_Test_Fire.mp3"
+        },
+        {
+          "key": "saturn_rpws_1",
+          "title": "File:Saturn sound.ogg",
+          "credit": "NASA/JPL/University of Iowa",
+          "license": "Public domain (PD-USGov-NASA)",
+          "url": "https://commons.wikimedia.org/wiki/File:Saturn_sound.ogg"
+        },
+        {
+          "key": "perseverance_cruise",
+          "title": "File:Perseverance Rover's Interplanetary Sound.oga",
+          "credit": "NASA/JPL-Caltech/DPA",
+          "license": "Public domain (PD-USGov-NASA)",
+          "url": "https://commons.wikimedia.org/wiki/File:Perseverance_Rover%27s_Interplanetary_Sound.oga"
+        }
+      ],
+      "synthesis": "Original A Lydian 4-chord analog & glass-swell synthesis convolved with NASA ir-hull",
+      "loopStart": 0.12,
+      "loopEnd": 32.12
+    },
+    {
+      "id": "music-combat",
+      "file": "stems/music-combat.mp3",
+      "kind": "music",
+      "durationSec": 24.3,
+      "bytes": 243645,
+      "sha256": "c307dfdb6212337a05b205b3d3ed3f567c5df60b88f8e8648f5b3993943a2129",
+      "sources": [
+        {
+          "key": "sls_fire",
+          "title": "File:SLS Test Fire.mp3",
+          "credit": "NASA",
+          "license": "Public domain (PD-USGov-NASA)",
+          "url": "https://commons.wikimedia.org/wiki/File:SLS_Test_Fire.mp3"
+        },
+        {
+          "key": "perseverance_laser",
+          "title": "File:First acoustic recording of laser shots on Mars.oga",
+          "credit": "NASA/JPL-Caltech/LANL/CNES/CNRS/ISAE-Supaero",
+          "license": "Public domain (PD-USGov-NASA)",
+          "url": "https://commons.wikimedia.org/wiki/File:First_acoustic_recording_of_laser_shots_on_Mars.oga"
+        },
+        {
+          "key": "saturn_rpws_1",
+          "title": "File:Saturn sound.ogg",
+          "credit": "NASA/JPL/University of Iowa",
+          "license": "Public domain (PD-USGov-NASA)",
+          "url": "https://commons.wikimedia.org/wiki/File:Saturn_sound.ogg"
+        }
+      ],
+      "synthesis": "Original 120 BPM D Phrygian tactical bass/brass + NASA percussion convolved with NASA ir-hull",
+      "loopStart": 0.12,
+      "loopEnd": 24.12
+    },
+    {
+      "id": "bed-cabin",
+      "file": "stems/bed-cabin.mp3",
+      "kind": "loop",
+      "durationSec": 12.3,
+      "bytes": 148365,
+      "sha256": "0209737f13be96969b4599ce23056d8e2fcd51307594fe1bc7078b7d9abc227e",
+      "sources": [
+        {
+          "key": "perseverance_cruise",
+          "title": "File:Perseverance Rover's Interplanetary Sound.oga",
+          "credit": "NASA/JPL-Caltech/DPA",
+          "license": "Public domain (PD-USGov-NASA)",
+          "url": "https://commons.wikimedia.org/wiki/File:Perseverance_Rover%27s_Interplanetary_Sound.oga"
+        },
+        {
+          "key": "insight_seismic",
+          "title": "File:07-Mars sound1a 20s x100.wav",
+          "credit": "NASA/JPL-Caltech",
+          "license": "Public domain (PD-USGov-NASA)",
+          "url": "https://commons.wikimedia.org/wiki/File:07-Mars_sound1a_20s_x100.wav"
+        }
+      ],
+      "loopStart": 0.12,
+      "loopEnd": 12.12
+    },
+    {
+      "id": "bed-planetary",
+      "file": "stems/bed-planetary.mp3",
+      "kind": "loop",
+      "durationSec": 14.3,
+      "bytes": 172269,
+      "sha256": "74ee37990cc00a00b46cbe8bd32f306e3dabdeb54657a6a6d120e0f6ce6c9e9f",
+      "sources": [
+        {
+          "key": "saturn_rpws_2",
+          "title": "File:Saturn sound2.ogg",
+          "credit": "NASA/JPL/University of Iowa",
+          "license": "Public domain (PD-USGov-NASA)",
+          "url": "https://commons.wikimedia.org/wiki/File:Saturn_sound2.ogg"
+        },
+        {
+          "key": "saturn_rpws_1",
+          "title": "File:Saturn sound.ogg",
+          "credit": "NASA/JPL/University of Iowa",
+          "license": "Public domain (PD-USGov-NASA)",
+          "url": "https://commons.wikimedia.org/wiki/File:Saturn_sound.ogg"
+        }
+      ],
+      "loopStart": 0.12,
+      "loopEnd": 14.12
+    },
+    {
+      "id": "bed-interstellar",
+      "file": "stems/bed-interstellar.mp3",
+      "kind": "loop",
+      "durationSec": 14.3,
+      "bytes": 172269,
+      "sha256": "d9d55526e22397820794643c5a5d584ddf91af055aaca2aa9ad2d5e2a5c00a36",
+      "sources": [
+        {
+          "key": "jupiter_rpws",
+          "title": "File:Cassini RPWS Jupiter 010104.ogg",
+          "credit": "NASA/JPL/University of Iowa",
+          "license": "Public domain (PD-USGov-NASA)",
+          "url": "https://commons.wikimedia.org/wiki/File:Cassini_RPWS_Jupiter_010104.ogg"
+        },
+        {
+          "key": "earth_chorus",
+          "title": "File:Chorus Radio Waves within Earth's Atmosphere.mp3",
+          "credit": "NASA/Van Allen Probes EMFISIS",
+          "license": "Public domain (PD-USGov-NASA)",
+          "url": "https://commons.wikimedia.org/wiki/File:Chorus_Radio_Waves_within_Earth%27s_Atmosphere.mp3"
+        }
+      ],
+      "loopStart": 0.12,
+      "loopEnd": 14.12
+    },
+    {
+      "id": "bed-sheath",
+      "file": "stems/bed-sheath.mp3",
+      "kind": "loop",
+      "durationSec": 10.3,
+      "bytes": 124461,
+      "sha256": "ce3520c010e530270a1423c5edd8e7ba1df51c67b1a27a4f9f1b8b2680951c90",
+      "sources": [
+        {
+          "key": "earth_chorus",
+          "title": "File:Chorus Radio Waves within Earth's Atmosphere.mp3",
+          "credit": "NASA/Van Allen Probes EMFISIS",
+          "license": "Public domain (PD-USGov-NASA)",
+          "url": "https://commons.wikimedia.org/wiki/File:Chorus_Radio_Waves_within_Earth%27s_Atmosphere.mp3"
+        },
+        {
+          "key": "enceladus_rpws",
+          "title": "File:Cassini - Enceladus Sound.mp3",
+          "credit": "NASA/JPL/University of Iowa",
+          "license": "Public domain (PD-USGov-NASA)",
+          "url": "https://commons.wikimedia.org/wiki/File:Cassini_-_Enceladus_Sound.mp3"
+        }
+      ],
+      "loopStart": 0.12,
+      "loopEnd": 10.12
+    },
+    {
+      "id": "stem-drive",
+      "file": "stems/stem-drive.mp3",
+      "kind": "loop",
+      "durationSec": 10.3,
+      "bytes": 124461,
+      "sha256": "d5952fefd2849b58e9c40f95a7b4ec92b76c383a6f28a55cb710afb22994d641",
+      "sources": [
+        {
+          "key": "sls_fire",
+          "title": "File:SLS Test Fire.mp3",
+          "credit": "NASA",
+          "license": "Public domain (PD-USGov-NASA)",
+          "url": "https://commons.wikimedia.org/wiki/File:SLS_Test_Fire.mp3"
+        },
+        {
+          "key": "perseverance_cruise",
+          "title": "File:Perseverance Rover's Interplanetary Sound.oga",
+          "credit": "NASA/JPL-Caltech/DPA",
+          "license": "Public domain (PD-USGov-NASA)",
+          "url": "https://commons.wikimedia.org/wiki/File:Perseverance_Rover%27s_Interplanetary_Sound.oga"
+        },
+        {
+          "key": "saturn_rpws_1",
+          "title": "File:Saturn sound.ogg",
+          "credit": "NASA/JPL/University of Iowa",
+          "license": "Public domain (PD-USGov-NASA)",
+          "url": "https://commons.wikimedia.org/wiki/File:Saturn_sound.ogg"
+        }
+      ],
+      "loopStart": 0.12,
+      "loopEnd": 10.12
+    },
+    {
+      "id": "stem-rcs",
+      "file": "stems/stem-rcs.mp3",
+      "kind": "loop",
+      "durationSec": 6.3,
+      "bytes": 76365,
+      "sha256": "c420170eb9370a86988b1ac80591208acb7f4ee0539a263082c3844fa0165b49",
+      "sources": [
+        {
+          "key": "sls_fire",
+          "title": "File:SLS Test Fire.mp3",
+          "credit": "NASA",
+          "license": "Public domain (PD-USGov-NASA)",
+          "url": "https://commons.wikimedia.org/wiki/File:SLS_Test_Fire.mp3"
+        },
+        {
+          "key": "perseverance_mars",
+          "title": "File:NASA's Perseverance Rover Microphone Captures Sounds from Mars.ogg",
+          "credit": "NASA/JPL-Caltech",
+          "license": "Public domain (PD-USGov-NASA)",
+          "url": "https://commons.wikimedia.org/wiki/File:NASA%27s_Perseverance_Rover_Microphone_Captures_Sounds_from_Mars.ogg"
+        }
+      ],
+      "loopStart": 0.12,
+      "loopEnd": 6.12
+    },
+    {
+      "id": "stem-harvest",
+      "file": "stems/stem-harvest.mp3",
+      "kind": "loop",
+      "durationSec": 8.3,
+      "bytes": 100269,
+      "sha256": "f9fe48893f079793eb67f8ea25a7f13d4aa0f6cbebb48f295276b3a36f41e135",
+      "sources": [
+        {
+          "key": "perseverance_cruise",
+          "title": "File:Perseverance Rover's Interplanetary Sound.oga",
+          "credit": "NASA/JPL-Caltech/DPA",
+          "license": "Public domain (PD-USGov-NASA)",
+          "url": "https://commons.wikimedia.org/wiki/File:Perseverance_Rover%27s_Interplanetary_Sound.oga"
+        },
+        {
+          "key": "enceladus_rpws",
+          "title": "File:Cassini - Enceladus Sound.mp3",
+          "credit": "NASA/JPL/University of Iowa",
+          "license": "Public domain (PD-USGov-NASA)",
+          "url": "https://commons.wikimedia.org/wiki/File:Cassini_-_Enceladus_Sound.mp3"
+        }
+      ],
+      "loopStart": 0.12,
+      "loopEnd": 8.12
+    },
+    {
+      "id": "ir-hull",
+      "file": "stems/ir-hull.wav",
+      "kind": "ir",
+      "durationSec": 2.0,
+      "bytes": 192044,
+      "sha256": "e6b9c282d4d2cce0229f2fd37fb1a84529bd5d793f993d0987ee02cc3dd813b5",
+      "sources": [
+        {
+          "key": "sls_fire",
+          "title": "File:SLS Test Fire.mp3",
+          "credit": "NASA",
+          "license": "Public domain (PD-USGov-NASA)",
+          "url": "https://commons.wikimedia.org/wiki/File:SLS_Test_Fire.mp3"
+        },
+        {
+          "key": "saturn_rpws_1",
+          "title": "File:Saturn sound.ogg",
+          "credit": "NASA/JPL/University of Iowa",
+          "license": "Public domain (PD-USGov-NASA)",
+          "url": "https://commons.wikimedia.org/wiki/File:Saturn_sound.ogg"
+        },
+        {
+          "key": "perseverance_cruise",
+          "title": "File:Perseverance Rover's Interplanetary Sound.oga",
+          "credit": "NASA/JPL-Caltech/DPA",
+          "license": "Public domain (PD-USGov-NASA)",
+          "url": "https://commons.wikimedia.org/wiki/File:Perseverance_Rover%27s_Interplanetary_Sound.oga"
+        }
+      ]
+    },
+    {
+      "id": "sfx-quindar-in",
+      "file": "stems/sfx-quindar-in.mp3",
+      "kind": "sfx",
+      "durationSec": 0.22,
+      "bytes": 3501,
+      "sha256": "6e131be087f00b8e0b9d8e262abcf833ecd131e02be36cafc4a9f72b22f6f709",
+      "sources": [
+        {
+          "key": "quindar_1",
+          "title": "File:Quindar - Sound (1).mp3",
+          "credit": "NASA",
+          "license": "Public domain (PD-USGov-NASA)",
+          "url": "https://commons.wikimedia.org/wiki/File:Quindar_-_Sound_(1).mp3"
+        }
+      ]
+    },
+    {
+      "id": "sfx-quindar-out",
+      "file": "stems/sfx-quindar-out.mp3",
+      "kind": "sfx",
+      "durationSec": 0.22,
+      "bytes": 3501,
+      "sha256": "e8c9bdcb83c221d559723f461b8368e80ffae76485c742da4b9369041820dff0",
+      "sources": [
+        {
+          "key": "quindar_2",
+          "title": "File:Quindar - Sound (2).mp3",
+          "credit": "NASA",
+          "license": "Public domain (PD-USGov-NASA)",
+          "url": "https://commons.wikimedia.org/wiki/File:Quindar_-_Sound_(2).mp3"
+        }
+      ]
+    },
+    {
+      "id": "sfx-wpn-newtonian",
+      "file": "stems/sfx-wpn-newtonian.mp3",
+      "kind": "sfx",
+      "durationSec": 0.75,
+      "bytes": 9837,
+      "sha256": "19a8e6fa0589018f6fecfc0ab0394d46dbf7839c1ea7de9b92f2512aa1c7c623",
+      "sources": [
+        {
+          "key": "perseverance_laser",
+          "title": "File:First acoustic recording of laser shots on Mars.oga",
+          "credit": "NASA/JPL-Caltech/LANL/CNES/CNRS/ISAE-Supaero",
+          "license": "Public domain (PD-USGov-NASA)",
+          "url": "https://commons.wikimedia.org/wiki/File:First_acoustic_recording_of_laser_shots_on_Mars.oga"
+        },
+        {
+          "key": "sls_fire",
+          "title": "File:SLS Test Fire.mp3",
+          "credit": "NASA",
+          "license": "Public domain (PD-USGov-NASA)",
+          "url": "https://commons.wikimedia.org/wiki/File:SLS_Test_Fire.mp3"
+        }
+      ]
+    },
+    {
+      "id": "sfx-wpn-relativistic",
+      "file": "stems/sfx-wpn-relativistic.mp3",
+      "kind": "sfx",
+      "durationSec": 1.35,
+      "bytes": 17037,
+      "sha256": "6d0f845d7979536a2a9da22baa3a0185b244e27806bffb1a0973f912fd4dc0c0",
+      "sources": [
+        {
+          "key": "perseverance_laser",
+          "title": "File:First acoustic recording of laser shots on Mars.oga",
+          "credit": "NASA/JPL-Caltech/LANL/CNES/CNRS/ISAE-Supaero",
+          "license": "Public domain (PD-USGov-NASA)",
+          "url": "https://commons.wikimedia.org/wiki/File:First_acoustic_recording_of_laser_shots_on_Mars.oga"
+        },
+        {
+          "key": "saturn_lightning",
+          "title": "File:Lightning Strikes at Saturn (PIA14310).wav",
+          "credit": "NASA/JPL-Caltech/University of Iowa",
+          "license": "Public domain (PD-USGov-NASA)",
+          "url": "https://commons.wikimedia.org/wiki/File:Lightning_Strikes_at_Saturn_(PIA14310).wav"
+        },
+        {
+          "key": "sls_fire",
+          "title": "File:SLS Test Fire.mp3",
+          "credit": "NASA",
+          "license": "Public domain (PD-USGov-NASA)",
+          "url": "https://commons.wikimedia.org/wiki/File:SLS_Test_Fire.mp3"
+        }
+      ]
+    },
+    {
+      "id": "sfx-dock-clunk",
+      "file": "stems/sfx-dock-clunk.mp3",
+      "kind": "sfx",
+      "durationSec": 0.95,
+      "bytes": 12141,
+      "sha256": "c109bff8d4ea0ef9354c5a1bdf54b1a4b4dbdc4e87776a8b62362199694d0064",
+      "sources": [
+        {
+          "key": "sls_fire",
+          "title": "File:SLS Test Fire.mp3",
+          "credit": "NASA",
+          "license": "Public domain (PD-USGov-NASA)",
+          "url": "https://commons.wikimedia.org/wiki/File:SLS_Test_Fire.mp3"
+        },
+        {
+          "key": "insight_seismic",
+          "title": "File:07-Mars sound1a 20s x100.wav",
+          "credit": "NASA/JPL-Caltech",
+          "license": "Public domain (PD-USGov-NASA)",
+          "url": "https://commons.wikimedia.org/wiki/File:07-Mars_sound1a_20s_x100.wav"
+        },
+        {
+          "key": "enceladus_rpws",
+          "title": "File:Cassini - Enceladus Sound.mp3",
+          "credit": "NASA/JPL/University of Iowa",
+          "license": "Public domain (PD-USGov-NASA)",
+          "url": "https://commons.wikimedia.org/wiki/File:Cassini_-_Enceladus_Sound.mp3"
+        }
+      ]
+    },
+    {
+      "id": "sfx-impact",
+      "file": "stems/sfx-impact.mp3",
+      "kind": "sfx",
+      "durationSec": 1.15,
+      "bytes": 14445,
+      "sha256": "84d069355819e7d08383ceca6f83804ac1bf34a0c3a01d67aa9d283495061b9f",
+      "sources": [
+        {
+          "key": "saturn_lightning",
+          "title": "File:Lightning Strikes at Saturn (PIA14310).wav",
+          "credit": "NASA/JPL-Caltech/University of Iowa",
+          "license": "Public domain (PD-USGov-NASA)",
+          "url": "https://commons.wikimedia.org/wiki/File:Lightning_Strikes_at_Saturn_(PIA14310).wav"
+        },
+        {
+          "key": "sls_fire",
+          "title": "File:SLS Test Fire.mp3",
+          "credit": "NASA",
+          "license": "Public domain (PD-USGov-NASA)",
+          "url": "https://commons.wikimedia.org/wiki/File:SLS_Test_Fire.mp3"
+        }
+      ]
+    },
+    {
+      "id": "sfx-explosion",
+      "file": "stems/sfx-explosion.mp3",
+      "kind": "sfx",
+      "durationSec": 1.75,
+      "bytes": 21645,
+      "sha256": "b66953a7c17651e0545988b6017389d97c648059d0f403bfb860dde699a36683",
+      "sources": [
+        {
+          "key": "sls_fire",
+          "title": "File:SLS Test Fire.mp3",
+          "credit": "NASA",
+          "license": "Public domain (PD-USGov-NASA)",
+          "url": "https://commons.wikimedia.org/wiki/File:SLS_Test_Fire.mp3"
+        },
+        {
+          "key": "saturn_lightning",
+          "title": "File:Lightning Strikes at Saturn (PIA14310).wav",
+          "credit": "NASA/JPL-Caltech/University of Iowa",
+          "license": "Public domain (PD-USGov-NASA)",
+          "url": "https://commons.wikimedia.org/wiki/File:Lightning_Strikes_at_Saturn_(PIA14310).wav"
+        },
+        {
+          "key": "insight_seismic",
+          "title": "File:07-Mars sound1a 20s x100.wav",
+          "credit": "NASA/JPL-Caltech",
+          "license": "Public domain (PD-USGov-NASA)",
+          "url": "https://commons.wikimedia.org/wiki/File:07-Mars_sound1a_20s_x100.wav"
+        }
+      ]
+    },
+    {
+      "id": "sfx-ui-click",
+      "file": "stems/sfx-ui-click.mp3",
+      "kind": "sfx",
+      "durationSec": 0.062,
+      "bytes": 1485,
+      "sha256": "37fd63fc1c6ff0b69ae85857b7c7cb2578ec69316a8dc0e2aad0653fe3a689d0",
+      "sources": [
+        {
+          "key": "perseverance_laser",
+          "title": "File:First acoustic recording of laser shots on Mars.oga",
+          "credit": "NASA/JPL-Caltech/LANL/CNES/CNRS/ISAE-Supaero",
+          "license": "Public domain (PD-USGov-NASA)",
+          "url": "https://commons.wikimedia.org/wiki/File:First_acoustic_recording_of_laser_shots_on_Mars.oga"
+        }
+      ]
+    },
+    {
+      "id": "sfx-ui-toggle",
+      "file": "stems/sfx-ui-toggle.mp3",
+      "kind": "sfx",
+      "durationSec": 0.11,
+      "bytes": 2061,
+      "sha256": "a70552fe4be883abbedc4da3bfc4f009fc8c2e1b6d83896ca7c068fff4d1dd27",
+      "sources": [
+        {
+          "key": "perseverance_laser",
+          "title": "File:First acoustic recording of laser shots on Mars.oga",
+          "credit": "NASA/JPL-Caltech/LANL/CNES/CNRS/ISAE-Supaero",
+          "license": "Public domain (PD-USGov-NASA)",
+          "url": "https://commons.wikimedia.org/wiki/File:First_acoustic_recording_of_laser_shots_on_Mars.oga"
+        },
+        {
+          "key": "quindar_1",
+          "title": "File:Quindar - Sound (1).mp3",
+          "credit": "NASA",
+          "license": "Public domain (PD-USGov-NASA)",
+          "url": "https://commons.wikimedia.org/wiki/File:Quindar_-_Sound_(1).mp3"
+        }
+      ]
+    },
+    {
+      "id": "sfx-ui-tab",
+      "file": "stems/sfx-ui-tab.mp3",
+      "kind": "sfx",
+      "durationSec": 0.125,
+      "bytes": 2349,
+      "sha256": "23789ef42ba0b7ec4ded67854dfcf4b264d4bab58421a2fa03f9ca800d40ef93",
+      "sources": [
+        {
+          "key": "quindar_1",
+          "title": "File:Quindar - Sound (1).mp3",
+          "credit": "NASA",
+          "license": "Public domain (PD-USGov-NASA)",
+          "url": "https://commons.wikimedia.org/wiki/File:Quindar_-_Sound_(1).mp3"
+        },
+        {
+          "key": "perseverance_laser",
+          "title": "File:First acoustic recording of laser shots on Mars.oga",
+          "credit": "NASA/JPL-Caltech/LANL/CNES/CNRS/ISAE-Supaero",
+          "license": "Public domain (PD-USGov-NASA)",
+          "url": "https://commons.wikimedia.org/wiki/File:First_acoustic_recording_of_laser_shots_on_Mars.oga"
+        }
+      ]
+    },
+    {
+      "id": "sfx-ui-confirm",
+      "file": "stems/sfx-ui-confirm.mp3",
+      "kind": "sfx",
+      "durationSec": 0.26,
+      "bytes": 3789,
+      "sha256": "cb5a4abebd4057dd9ab19a37a914cc387a164b3a3a892ca48a737c2a5f933925",
+      "sources": [
+        {
+          "key": "quindar_2",
+          "title": "File:Quindar - Sound (2).mp3",
+          "credit": "NASA",
+          "license": "Public domain (PD-USGov-NASA)",
+          "url": "https://commons.wikimedia.org/wiki/File:Quindar_-_Sound_(2).mp3"
+        },
+        {
+          "key": "quindar_1",
+          "title": "File:Quindar - Sound (1).mp3",
+          "credit": "NASA",
+          "license": "Public domain (PD-USGov-NASA)",
+          "url": "https://commons.wikimedia.org/wiki/File:Quindar_-_Sound_(1).mp3"
+        },
+        {
+          "key": "perseverance_laser",
+          "title": "File:First acoustic recording of laser shots on Mars.oga",
+          "credit": "NASA/JPL-Caltech/LANL/CNES/CNRS/ISAE-Supaero",
+          "license": "Public domain (PD-USGov-NASA)",
+          "url": "https://commons.wikimedia.org/wiki/File:First_acoustic_recording_of_laser_shots_on_Mars.oga"
+        }
+      ]
+    },
+    {
+      "id": "sfx-ui-deny",
+      "file": "stems/sfx-ui-deny.mp3",
+      "kind": "sfx",
+      "durationSec": 0.22,
+      "bytes": 3501,
+      "sha256": "e03d065becd843ab7d243571e126a62130c810db86e57437cbcc9ecfef05f739",
+      "sources": [
+        {
+          "key": "perseverance_laser",
+          "title": "File:First acoustic recording of laser shots on Mars.oga",
+          "credit": "NASA/JPL-Caltech/LANL/CNES/CNRS/ISAE-Supaero",
+          "license": "Public domain (PD-USGov-NASA)",
+          "url": "https://commons.wikimedia.org/wiki/File:First_acoustic_recording_of_laser_shots_on_Mars.oga"
+        },
+        {
+          "key": "insight_seismic",
+          "title": "File:07-Mars sound1a 20s x100.wav",
+          "credit": "NASA/JPL-Caltech",
+          "license": "Public domain (PD-USGov-NASA)",
+          "url": "https://commons.wikimedia.org/wiki/File:07-Mars_sound1a_20s_x100.wav"
+        },
+        {
+          "key": "quindar_2",
+          "title": "File:Quindar - Sound (2).mp3",
+          "credit": "NASA",
+          "license": "Public domain (PD-USGov-NASA)",
+          "url": "https://commons.wikimedia.org/wiki/File:Quindar_-_Sound_(2).mp3"
+        }
+      ]
+    },
+    {
+      "id": "sfx-warn-caution",
+      "file": "stems/sfx-warn-caution.mp3",
+      "kind": "sfx",
+      "durationSec": 0.48,
+      "bytes": 6381,
+      "sha256": "4c73392354913cd9f272abc7c26bb351f941b28a6658be36bf05cb86fb9eaafa",
+      "sources": [
+        {
+          "key": "quindar_1",
+          "title": "File:Quindar - Sound (1).mp3",
+          "credit": "NASA",
+          "license": "Public domain (PD-USGov-NASA)",
+          "url": "https://commons.wikimedia.org/wiki/File:Quindar_-_Sound_(1).mp3"
+        }
+      ]
+    },
+    {
+      "id": "sfx-alarm",
+      "file": "stems/sfx-alarm.mp3",
+      "kind": "sfx",
+      "durationSec": 0.85,
+      "bytes": 10989,
+      "sha256": "a3073bee9b5eab286cfd7006be5bef29c7f2e26e2633ecaa2b814c46dd776b86",
+      "sources": [
+        {
+          "key": "quindar_2",
+          "title": "File:Quindar - Sound (2).mp3",
+          "credit": "NASA",
+          "license": "Public domain (PD-USGov-NASA)",
+          "url": "https://commons.wikimedia.org/wiki/File:Quindar_-_Sound_(2).mp3"
+        },
+        {
+          "key": "earth_chorus",
+          "title": "File:Chorus Radio Waves within Earth's Atmosphere.mp3",
+          "credit": "NASA/Van Allen Probes EMFISIS",
+          "license": "Public domain (PD-USGov-NASA)",
+          "url": "https://commons.wikimedia.org/wiki/File:Chorus_Radio_Waves_within_Earth%27s_Atmosphere.mp3"
+        }
+      ]
+    }
+  ]
+}

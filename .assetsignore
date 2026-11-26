@@ -1,0 +1,15 @@
+.git/
+.gitattributes
+.gitignore
+.assetsignore
+.agents/
+.claude/
+.codex/
+.gemini/
+*.log
+*.pyc
+__pycache__/
+wrangler.json
+README.md
+*.md
+prototypes/lighthugger/test/

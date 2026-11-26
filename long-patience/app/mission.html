@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dead Reckoning: Relativity Lab</title>
+<meta name="description" content="A relativity lab aboard a lighthugger: see length contraction and time dilation, then calibrate a muon detector and measure your own speed.">
+<meta name="robots" content="noindex">
+<link rel="stylesheet" href="css/mission.css">
+</head>
+<body>
+<canvas id="scene" aria-hidden="true"></canvas>
+<div id="labels" class="labels" aria-hidden="true"></div>
+
+<!-- View controller: a SpaceNavigator-style puck. Tilt the cap to turn the view (orbit camera in the
+     overview, slew the sextant on the sextant stations). Buttons and keys zoom. -->
+<aside class="view-keys" id="view-keys" aria-label="View controls">
+  <p class="view-keys-title">View controls</p>
+  <p class="view-keys-row"><kbd>&larr;</kbd><kbd>&uarr;</kbd><kbd>&darr;</kbd><kbd>&rarr;</kbd><span id="view-keys-turn">turn view</span></p>
+  <p class="view-keys-row"><kbd>[</kbd><kbd>]</kbd><span>zoom</span></p>
+  <p class="view-keys-row"><kbd>R</kbd><span>reset view</span></p>
+  <output class="view-keys-level" id="view-zoom-level">&times;1.0</output>
+</aside>
+
+<div class="spacenav" id="spacenav" aria-label="SpaceNavigator view controller">
+  <div class="spacenav-zoom" role="group" aria-label="Zoom">
+    <button type="button" id="zoom-in" class="spacenav-btn" aria-label="Zoom in" title="Zoom in (hold)  ]">+</button>
+    <output class="spacenav-value" id="spacenav-value">&times;1.0</output>
+    <button type="button" id="zoom-out" class="spacenav-btn" aria-label="Zoom out" title="Zoom out (hold)  [">&minus;</button>
+  </div>
+  <div class="spacenav-stack">
+    <div class="spacenav-base" id="spacenav-base">
+      <span class="spacenav-tick n" aria-hidden="true"></span><span class="spacenav-tick e" aria-hidden="true"></span>
+      <span class="spacenav-tick s" aria-hidden="true"></span><span class="spacenav-tick w" aria-hidden="true"></span>
+      <div class="spacenav-knob" id="spacenav-knob" role="application" tabindex="0" aria-label="View controller. Tilt the cap, or use the arrow keys, to turn the view." title="Tilt the cap to turn the view. It springs back when released.">
+        <span class="spacenav-cap"></span>
+        <span class="spacenav-grip"></span>
+      </div>
+    </div>
+    <p class="spacenav-label"><span id="spacenav-mode">ORBIT VIEW</span></p>
+  </div>
+</div>
+
+<!-- Reticle for the sextant sight (shared by every sextant task) -->
+<div class="telescope-crosshair" id="telescope-crosshair" aria-hidden="true">
+  <div class="telescope-reticle-ring"></div>
+</div>
+<div class="track-hud" id="track-hud" role="status" hidden></div>
+<div class="sx-hud" id="sx-hud" hidden>
+  <span class="sx-hud-mode" id="sx-hud-mode">OPTICAL</span>
+  <span id="telescope-mag">MAG &times;1.0 &middot; FOV 24&deg;</span>
+</div>
+<div id="scope-hover" class="scope-hover" hidden></div>
+
+<header class="hud">
+  <h1>DEAD RECKONING</h1>
+  <p class="where" id="where">Briefing</p>
+  <ol class="mission-track" id="mission-track" aria-label="Mission progress">
+    <li data-track="brief" title="Briefing overview">Briefing</li>
+    <li data-track="s1" title="Station 1: Complete briefing to begin">1 &middot; Muon bore</li>
+    <li data-track="s2" title="Station 2: Verify Station 1 speed first">2 &middot; Starlight</li>
+    <li data-track="s3" title="Station 3: Complete Station 2 starlight solver first">3 &middot; Courier</li>
+    <li data-track="done" title="Debrief: Complete courier rendezvous first">Debrief</li>
+  </ol>
+  <div class="hud-actions">
+    <button type="button" id="btn-hud-help" class="hud-help-btn" title="Open Flight Operations Manual & Instructions (?)">? Instructions</button>
+  </div>
+</header>
+
+<!-- Running log of the measurements the crew has recorded so far -->
+<aside class="mission-log" id="mission-log" aria-label="Mission log" hidden>
+  <p class="mission-log-title">Mission log</p>
+  <dl>
+    <dt>Muon bore &beta;</dt><dd id="log-muon">&ndash;</dd>
+    <dt>Starlight &beta;</dt><dd id="log-spec">&ndash;</dd>
+    <dt>Colony ship w</dt><dd id="log-colony">&ndash;</dd>
+  </dl>
+  <p class="mission-log-check" id="log-check"></p>
+</aside>
+
+<main>
+  <!-- Briefing -->
+  <section class="card" id="s-title" aria-labelledby="h-title">
+    <h2 id="h-title">Lighthugger <em>Long Patience</em></h2>
+    <p>Your navigation computer has failed. Before the next waypoint you must measure your own speed, then send a courier to the moving colony ship <em>Nova Archimedes</em> without slowing down.</p>
+    <p class="dim">First, explore the relativistic effects behind your instruments.</p>
+    <div class="buttons"><button type="button" data-go="length" class="primary">Begin briefing</button></div>
+  </section>
+
+  <section class="card" id="s-length" aria-labelledby="h-length" hidden>
+    <h2 id="h-length">1 &middot; Length contraction</h2>
+    <p>The station has set out marker buoys 200 m apart. Choose a frame; the diagram compares positions measured simultaneously in that frame.</p>
+    <div class="seg" role="group" aria-label="Watch from">
+      <button type="button" class="frame" data-frame="station" aria-pressed="true">Station frame</button>
+      <button type="button" class="frame" data-frame="ship" aria-pressed="false">Ship frame</button>
+    </div>
+    <label class="slider">Relative speed <input type="range" class="beta" min="0" max="0.99" step="0.01" value="0.94"> <output class="beta-out">0.94c</output></label>
+    <p class="readout" id="r-length"></p>
+    <p class="dim" id="length-progress" aria-live="polite">View both the station frame and ship frame to continue.</p>
+    <div class="buttons"><button type="button" data-go="title">Back</button><button type="button" data-go="time" class="primary">Next</button></div>
+  </section>
+
+  <section class="card" id="s-time" aria-labelledby="h-time" hidden>
+    <h2 id="h-time">2 &middot; Time dilation</h2>
+    <p>Each buoy carries a clock. The station has synchronized them all. The ship carries one clock past them.</p>
+    <label class="slider">Relative speed <input type="range" class="beta" min="0.10" max="0.99" step="0.01" value="0.85"> <output class="beta-out">0.85c</output></label>
+    <p class="readout" id="r-time"></p>
+    <div class="buttons"><button type="button" data-go="length">Back</button><button type="button" data-go="muons" class="primary">Next</button></div>
+  </section>
+
+  <section class="card" id="s-muons" aria-labelledby="h-muons" hidden>
+    <h2 id="h-muons">3 &middot; Your speedometer</h2>
+    <p>Cosmic-ray collisions can produce muons, but a muon at rest survives only about 2.2 microseconds. Here an artificial guidepost beam provides muons at rest in the guidepost frame; the slider sets their speed relative to your ship. Muons enter the 1200 m bore, decay, and produce electrons that flash blue Cherenkov light in the ice. Faster relative speeds mean longer lifetimes in the ship frame, so they get farther.</p>
+    <label class="slider">Beam speed relative to ship <input type="range" class="beta" min="0.3" max="0.99" step="0.01" value="0.85"> <output class="beta-out">0.85c</output></label>
+    <p class="readout" id="r-muons"></p>
+    <div class="buttons"><button type="button" data-go="time">Back</button><button type="button" data-go="doppler" class="primary">Next: Doppler speedometer</button></div>
+  </section>
+
+  <section class="card" id="s-doppler" aria-labelledby="h-doppler" hidden>
+    <h2 id="h-doppler">4 · Light as a speedometer</h2>
+    <p>Choose a frame. The lamp is a hydrogen line source; the hull is a 3,200 K blackbody. Both spectra shift by the same Doppler factor, so a line and a continuum give the same speed.</p>
+    <div class="doppler-seg-row">
+      <div class="seg" role="group" aria-label="Observer frame">
+        <button type="button" data-doppler-frame="rest" aria-pressed="true">Together at rest</button>
+        <button type="button" data-doppler-frame="lamp" aria-pressed="false">Lamp frame</button>
+        <button type="button" data-doppler-frame="ship" aria-pressed="false">Ship frame</button>
+      </div>
+      <div class="seg seg-small" role="group" aria-label="Relative motion">
+        <span class="dim">Relative motion</span>
+        <button type="button" data-doppler-dir="approach" aria-pressed="true">Approaching</button>
+        <button type="button" data-doppler-dir="recede" aria-pressed="false">Receding</button>
+      </div>
+    </div>
+    <label class="slider" id="doppler-slider-row">Comparison speed <input type="range" class="beta" min="0" max="0.99" step="0.01" value="0.60"> <output class="beta-out">0.60c</output></label>
+    <div class="doppler-pair">
+      <figure class="plot-figure">
+        <svg id="p-doppler" class="plot" viewBox="0 0 700 100" role="img" aria-labelledby="p-doppler-title"><title id="p-doppler-title">Hydrogen H-alpha spectrum at rest and in the selected frame</title></svg>
+        <figcaption class="plot-caption" id="cap-lamp">LAMP &middot; H-&alpha; line source &middot; 656.3 nm rest</figcaption>
+      </figure>
+      <figure class="plot-figure">
+        <svg id="p-doppler-bb" class="plot" viewBox="0 0 700 100" role="img" aria-labelledby="p-doppler-bb-title"><title id="p-doppler-bb-title">Hull blackbody continuum in the selected frame</title></svg>
+        <figcaption class="plot-caption" id="cap-hull">HULL &middot; blackbody continuum &middot; 3,200 K rest</figcaption>
+      </figure>
+    </div>
+    <p class="readout" id="r-doppler"></p>
+    <div class="buttons"><button type="button" data-go="muons">Back</button><button type="button" data-go="cal" class="primary">Start the lab</button></div>
+  </section>
+
+  <!-- Lab, station 1 -->
+  <section class="panel ws" id="s-cal" data-station="muon" aria-labelledby="h-cal" hidden>
+    <div class="panel-header-row">
+      <div class="ws-title-inline">
+        <p class="tag">Muon Counter</p>
+        <h2 id="h-cal">Calibrate the detector</h2>
+      </div>
+      <div class="ws-rails">
+        <div class="objective-rail" id="obj-mcal" aria-label="Station 1 calibration objectives">
+          <span class="obj-title">OBJECTIVES</span>
+          <span class="obj" data-obj="count">COUNT 2,000 PER SECTION</span>
+          <span class="obj" data-obj="store">STORE CALIBRATION</span>
+        </div>
+      </div>
+      <button type="button" class="btn-card-help" data-help="cal" title="View detector calibration manual">? Instructions</button>
+    </div>
+    <div class="ws-body muon-body">
+      <div class="sx-col">
+        <p class="dim cal-instruction"><span id="cal-need">Count until every section has at least 2,000 hits, then store the calibration.</span> Completed sections turn green.</p>
+        <div class="buttons">
+          <button type="button" id="cal-run" class="primary" aria-pressed="false">Beam on</button>
+          <button type="button" id="cal-store" disabled title="Unlocks once every detector section reaches 2,000 hits">Store calibration</button>
+        </div>
+        <details><summary>Show accessible detector plot</summary><svg class="plot" id="p-cal" viewBox="0 0 380 210" role="img" aria-labelledby="p-cal-t"><title id="p-cal-t">Decays per section</title></svg></details>
+      </div>
+      <div class="sx-col">
+        <p class="readout" id="r-cal-fit"></p>
+        <details><summary>How calibration works</summary><p>You are docked at Waypoint Station. Its certified beam sends muons into the bore at <strong>0.800c</strong>. The twelve sections have different sensitivities. Whiskers show count uncertainty and faint lines show the fit's approximate one-standard-deviation band.</p></details>
+        <details>
+          <summary>Data table</summary>
+          <table class="data" id="t-cal"><caption class="vh">Calibration counts</caption></table>
+        </details>
+      </div>
+    </div>
+    <div class="buttons station-next">
+      <button type="button" class="plotscale" aria-pressed="false" title="Toggle logarithmic Y-axis on the accessible 2D plot">Log scale</button>
+      <button type="button" id="cal-csv">Download data (CSV)</button>
+      <button type="button" class="nav-split" data-go="doppler">Back</button>
+      <button type="button" id="depart" class="primary">Undock and depart</button>
+    </div>
+  </section>
+
+  <section class="panel ws" id="s-flight" data-station="muon" aria-labelledby="h-flight" hidden>
+    <div class="panel-header-row">
+      <div class="ws-title-inline">
+        <p class="tag">Muon Counter</p>
+        <h2 id="h-flight">Measure your speed</h2>
+      </div>
+      <div class="ws-rails">
+        <div class="objective-rail" id="obj-mflight" aria-label="Station 1 measurement objectives">
+          <span class="obj-title">OBJECTIVES</span>
+          <span class="obj" data-obj="count">COUNT MUONS</span>
+          <span class="obj" data-obj="fit">RUN NAV COMPUTER</span>
+          <span class="obj" data-obj="beta">RECORD &beta;</span>
+        </div>
+      </div>
+      <button type="button" class="btn-card-help" data-help="flight" title="View muon speed instructions">? Instructions</button>
+    </div>
+    <div class="ws-body muon-body">
+      <div class="sx-col">
+        <p>Slow muons from the waypoint guidepost enter your bore at the ship's speed.</p>
+        <p class="cal-state" id="cal-state"></p>
+        <div class="buttons">
+          <button type="button" id="fl-run" class="primary" aria-pressed="false">Start counting</button>
+          <button type="button" id="fl-analyze" disabled title="Collect at least 600 hits to unlock the navigation computer">Run Nav Computer</button>
+          <button type="button" id="fl-record" disabled title="Verify your relativistic β calculation first">Record speed</button>
+        </div>
+        <details><summary>Show accessible detector plot</summary><svg class="plot" id="p-fl" viewBox="0 0 380 210" role="img" aria-labelledby="p-fl-t"><title id="p-fl-t">Decays per section</title></svg></details>
+      </div>
+      <div class="sx-col">
+        <div class="badge-row">
+          <span class="scale-pill" id="scale-pill">Y-Scale: 0&ndash;10</span>
+          <span class="pill-info">12 Sections (1200 m)</span>
+        </div>
+        <p class="readout" id="r-fl-fit"></p>
+        <details>
+          <summary>Data table</summary>
+          <table class="data" id="t-fl"><caption class="vh">Flight counts</caption></table>
+        </details>
+        <!-- Simulated Computer Inversion Glitch & Manual Procedure (Revealed after computer failure) -->
+        <div class="glitch-box" id="fl-glitch" hidden>
+          <div class="glitch-header">
+            <span class="glitch-dot"></span> NAV-SYS FAULT: RELATIVISTIC CORRECTION OFFLINE
+          </div>
+          <div class="glitch-body">
+            <p class="code-line">> INERTIAL SUITE: CORRUPTED // TIME DILATION DETECTED</p>
+            <p class="code-line">> NOMINAL REST LIFETIME: &tau;₀ = 2.197 &micro;s &middot; c&tau;₀ = 658.65 m</p>
+            <p class="code-line" id="glitch-fit-line">> FIT DECAY LENGTH: L = &ndash; m</p>
+            <div class="inst-head">OPERATOR MANUAL OVERRIDE INSTRUCTIONS:</div>
+            <ol>
+              <li>Muon decay length in ship frame is dilated by &gamma;: <code>L = &beta;&gamma;c&tau;₀</code>.</li>
+              <li>Use your fitted decay length and the muon lifetime to determine &beta;. Consult your lab materials if needed.</li>
+              <li>Enter your calculated &beta; below or in the emergency terminal solver.</li>
+            </ol>
+          </div>
+        </div>
+        <!-- Manual Relativistic Override Input Card on Flight Panel (Revealed after computer failure) -->
+        <div class="manual-override-card" id="flight-override-card" hidden>
+          <h4>Manual Relativistic Velocity Input</h4>
+          <p class="dim">Inertial solver offline. Compute &beta; from fitted decay length L = &beta;&gamma;c&tau;₀.</p>
+          <div class="calc-input-row">
+            <label for="fl-beta-manual">&beta; =</label>
+            <input type="number" id="fl-beta-manual" step="0.001" min="0.01" max="0.999" placeholder="0.000" aria-label="Manual beta calculation">
+            <button type="button" id="fl-beta-submit" class="primary">Record Verified Speed</button>
+          </div>
+          <p class="term-feedback" id="fl-beta-feedback"></p>
+          <button type="button" id="btn-reopen-modal" style="margin-top:.4rem;font-size:.75rem">Open Emergency Solver Terminal</button>
+        </div>
+      </div>
+    </div>
+    <div class="buttons station-next">
+      <button type="button" class="plotscale" aria-pressed="false" title="Toggle logarithmic Y-axis on the accessible 2D plot">Log scale</button>
+      <button type="button" id="fl-csv">Download data (CSV)</button>
+      <button type="button" class="nav-split" data-go="cal">Back to calibration</button>
+      <button type="button" id="fl-next-station" class="primary" disabled title="Verify your calculated β in the Nav Computer first">Continue to Station 1 review &rarr;</button>
+    </div>
+  </section>
+
+  <section class="card" id="s-next" aria-labelledby="h-next" hidden>
+    <h2 id="h-next">Station 1: Speed Recorded</h2>
+    <p class="readout big" id="r-recorded"></p>
+    <p>Your muon measurement gives a first estimate of ship velocity. However, standard navigation doctrine requires two independent physical methods before committing to an orbital rendezvous.</p>
+    <p class="dim">Next: Station 2, the Starlight Spectrograph. By measuring relativistic Doppler shifts in hydrogen absorption lines ahead and behind, you will obtain an independent confirmation of &beta;.</p>
+    <div class="buttons">
+      <button type="button" data-go="spectro-cal" class="primary">Proceed to Station 2: Spectrograph &rarr;</button>
+      <button type="button" data-go="flight">Review Muon Channel</button>
+    </div>
+  </section>
+
+  <!-- Crew Station 2/3: the sextant. One workstation, one layout. Calibration (Station 2), star
+       finding (Station 2) and thermal sighting (Station 3) all use these same tools; only the task
+       strip, the objectives and the title change. -->
+  <section class="panel panel-wide ws" id="s-sextant" data-station="sextant" aria-labelledby="h-sextant" hidden>
+    <div class="panel-header-row">
+      <div class="ws-title-inline">
+        <p class="tag" id="sx-tag">Sextant</p>
+        <h2 id="h-sextant">Calibrate spectrograph</h2>
+      </div>
+      <div class="ws-rails">
+        <div class="objective-rail" id="obj-cal" data-sx-for="spectro-cal" aria-label="Calibration objectives">
+          <span class="obj-title">OBJECTIVES</span>
+          <span class="obj" data-obj="lamp">STRIKE LAMP</span>
+          <span class="obj" data-obj="store">STORE CALIBRATION</span>
+        </div>
+        <div class="objective-rail" id="obj-star" data-sx-for="spectro-star" aria-label="Station 2 objectives" hidden>
+          <span class="obj-title">OBJECTIVES</span>
+          <span class="obj" data-obj="bow">BLUE-SHIFTED STAR</span>
+          <span class="obj" data-obj="aft">RED-SHIFTED STAR</span>
+          <span class="obj" data-obj="beta">SOLVE &beta;</span>
+        </div>
+        <div class="objective-rail" id="obj-dock" data-sx-for="dock" aria-label="Station 3 objectives" hidden>
+          <span class="obj-title">OBJECTIVES</span>
+          <span class="obj" data-obj="thermal">FIND SOURCE</span>
+          <span class="obj" data-obj="line">SPECTRUM</span>
+          <span class="obj" data-obj="w">VERIFY w</span>
+        </div>
+
+      </div>
+      <button type="button" class="btn-card-help" id="sx-help" data-help="spectro-cal" title="Open the sextant manual">? Instructions</button>
+    </div>
+
+    <div class="ws-body sx-body">
+      <!-- Sight: where the telescope points, and what is under the reticle -->
+      <div class="sx-col sx-sight" aria-label="Sight">
+        <div class="sx-target" id="sx-target" data-state="none">
+          <span class="sx-k">TARGET</span>
+          <strong id="sx-target-name">NO LOCK</strong>
+          <span class="sx-target-meta" id="sx-target-meta">Turn the view with the controller or drag the sky. Stars carry their catalog names.</span>
+        </div>
+        <div class="sx-sight-row">
+          <div class="star-reticle-scope" id="star-reticle-scope">
+            <svg class="plot scope-sky-svg" id="p-scope" viewBox="0 0 340 150" role="img" aria-labelledby="p-scope-t">
+              <title id="p-scope-t">All-sky map around the ship: bow sky and stern sky as two discs. Distance from a disc's centre is the angle from the bow. Click it to slew.</title>
+            </svg>
+          </div>
+          <div class="sx-sight-ctrls">
+            <div class="sx-aim" id="sx-aim">
+              <label>&theta; <input type="number" id="scope-theta" min="0" max="180" step="0.1" value="90" aria-label="Aim bearing from the bow, theta"></label>
+              <label>&phi; <input type="number" id="scope-az" min="0" max="360" step="1" value="90" aria-label="Aim azimuth about the bow axis, phi"></label>
+              <output id="sx-fov">FOV 24.0&deg;</output>
+            </div>
+            <div class="sx-modes">
+              <button type="button" id="scope-ir-toggle" aria-pressed="false" title="Switch between the optical sight and the thermal infrared array (white = cold, black = hot)">IR SIGHT: OFF</button>
+              <button type="button" id="btn-snap-nearest" title="Slew to the brightest catalog star nearest the reticle">NEAREST STAR</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Spectrograph: one detector, three sources -->
+      <div class="sx-col sx-spec" aria-label="Spectrograph">
+        <div class="sx-source">
+          <span class="sx-k">SOURCE</span>
+          <strong id="sx-source-label">none recorded</strong>
+          <div class="sx-tube" id="discharge-tube-box" data-sx-for="spectro-cal">
+            <span class="tube-electrode left"></span>
+            <span class="tube-glass" id="discharge-glass"><span class="tube-plasma" id="discharge-plasma"></span><span class="tube-arc" id="discharge-arc"></span></span>
+            <span class="tube-electrode right"></span>
+            <span class="sx-tube-status" id="discharge-status">Lamp standby</span>
+          </div>
+          <span class="sx-cal-chip" id="sx-cal-chip" data-state="off">CAL &middot; not stored</span>
+        </div>
+        <svg class="plot" id="p-spec-star" viewBox="0 0 600 150" role="img" aria-labelledby="p-spec-star-t">
+          <title id="p-spec-star-t">Spectrograph: flux against wavelength for the selected source</title>
+          <text x="300" y="72" text-anchor="middle" style="fill:#3f7a70;font-size:10px;letter-spacing:1.4px">NO SPECTRUM RECORDED</text>
+        </svg>
+        <p class="readout sx-readout" id="r-spec-star"></p>
+        <div class="sx-actions">
+          <button type="button" id="scope-lock" class="primary" title="Record the spectrum of the target in the reticle [Space]">TAKE SPECTRUM</button>
+          <button type="button" id="spec-cal-run" data-sx-for="spectro-cal" title="Strike the hydrogen discharge lamp and record its spectrum">STRIKE LAMP</button>
+          <button type="button" id="spec-cal-store" data-sx-for="spectro-cal" disabled title="Fix the wavelength scale from the recorded lamp lines">STORE CAL</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Task strip: the part that changes. Same height for every task. -->
+    <div class="sx-task">
+      <p class="sx-task-text" data-sx-for="spectro-cal"><strong>CALIBRATE</strong> Strike the lamp, compare each bright line with its known wavelength, then store the calibration.</p>
+      <div class="sx-task-row" data-sx-for="spectro-star" hidden>
+        <p class="sx-task-text" id="sx-picks"><strong>MEASURE</strong> Find one blue-shifted and one red-shifted star, take each spectrum, then solve for &beta;.</p>
+        <button type="button" id="spec-record" class="primary" disabled title="Take both a blue-shifted and a red-shifted star spectrum first">Run starlight solver</button>
+      </div>
+      <div class="sx-task-row sx-task-w" data-sx-for="dock" hidden>
+        <span class="badge" id="colony-sensor-status">Find radiators</span>
+        <label for="rad-nm">H-&alpha;</label><input type="number" id="rad-nm" min="100" max="1400" step="0.1" placeholder="nm"><span class="dim">nm</span>
+        <label for="rad-w">w</label><input type="number" id="rad-w" min="-0.999" max="0.999" step="0.001" placeholder="signed"><span class="dim">c</span>
+        <button type="button" class="btn-card-help" data-help="calculate-w">? w hint</button>
+        <button type="button" id="rad-solve" class="primary" disabled title="Click the IR-1 H-alpha spike and enter w first">Verify w</button>
+      </div>
+    </div>
+
+    <div class="buttons station-next">
+      <span class="readout sx-msg" id="r-rad" aria-live="polite"></span>
+      <button type="button" id="sx-csv">Download spectra data</button>
+      <button type="button" data-go="next" data-sx-for="spectro-cal">Back to Station 1</button>
+      <button type="button" data-go="spectro-cal" data-sx-for="spectro-star" hidden>Back to calibration</button>
+      <button type="button" data-go="spectro-star" data-sx-for="dock" hidden>Back to Station 2</button>
+      <button type="button" id="spec-cal-next" class="primary" data-sx-for="spectro-cal" disabled title="Strike the lamp and click STORE CAL first">Continue to the sky &rarr;</button>
+      <button type="button" id="dock-to-courier" class="primary" data-sx-for="dock" hidden disabled title="Locate IR-1 and verify colony speed w first">Open probe control &rarr;</button>
+    </div>
+  </section>
+
+  <!-- Crew Station 3: probe control -->
+  <section class="panel panel-wide ws" id="s-dock" data-station="probe" aria-labelledby="h-dock" hidden>
+    <div class="panel-header-row">
+      <div class="ws-title-inline">
+        <p class="tag">Probe Control</p>
+        <h2 id="h-dock">Courier launch &amp; return</h2>
+      </div>
+      <div class="ws-rails">
+        <div class="objective-rail" id="obj-probe" aria-label="Station 3 probe objectives">
+      <span class="obj-title">OBJECTIVES</span>
+      <span class="obj" data-obj="launch">PROGRAM &amp; LAUNCH</span>
+      <span class="obj" data-obj="return">RETURN CORE</span>
+    </div>
+      </div>
+      <button type="button" class="btn-card-help" data-help="courier" title="View velocity addition formulas &amp; docking guide">? Instructions</button>
+    </div>
+    <div class="ws-body probe-body">
+      <div class="sx-col probe-form">
+        <div class="badge-row">
+          <span class="badge ok" id="dock-telemetry-ship">SHIP &beta; &middot; awaiting Station 1</span>
+          <span class="badge warn" id="dock-telemetry-platform">COLONY w &middot; pending</span>
+          <span class="badge ok">&plusmn;0.015c</span>
+        </div>
+        <p class="dim probe-brief">Positive is <em>Long Patience</em>'s direction. Enter outbound u&prime; (ship frame) and return u&Prime; (colony frame).</p>
+        <div class="calc-input-row"><label for="shuttle-u">Outbound u&prime;</label><input type="number" id="shuttle-u" min="-0.99" max="0.99" step="0.001" placeholder="signed velocity"><span class="dim">c</span></div>
+        <div class="calc-input-row"><label for="return-u">Return u&Prime;</label><input type="number" id="return-u" min="-0.99" max="0.99" step="0.001" placeholder="signed velocity"><span class="dim">c</span></div>
+        <div class="sx-actions">
+          <button type="button" id="dock-solver-run">Run rendezvous computer</button>
+          <button type="button" id="shuttle-launch" class="primary">Launch probe</button>
+          <button type="button" class="btn-card-help" data-help="calculate-courier">? Hint</button>
+          <button type="button" id="dock-attempt" hidden>Attempt docking</button>
+        </div>
+        <p id="dock-solver-fault" class="readout term-line term-err" role="status" hidden>ERROR: solver offline. Calculate u&prime; and u&Prime; manually.</p>
+      </div>
+      <div class="sx-col probe-telemetry">
+        <svg class="plot" id="p-dock-gauge" viewBox="0 0 380 120" role="img" aria-labelledby="p-dock-t">
+          <title id="p-dock-t">Docking velocity mismatch gauge</title>
+        </svg>
+        <div class="badge-row">
+          <span class="badge ok" id="inbound-status">Courier on launch rails</span>
+          <span class="badge ok">Destination: Nova Archimedes</span>
+        </div>
+        <p class="readout" id="r-dock"></p>
+      </div>
+    </div>
+    <div class="buttons station-next">
+      <button type="button" id="dock-csv">Download rendezvous data</button>
+      <button type="button" class="nav-split" data-go="dock">Back to sextant</button>
+      <button type="button" id="dock-finish" class="primary" disabled>Complete mission &amp; install core &rarr;</button>
+    </div>
+  </section>
+
+  <section class="card" id="s-mission-lost" role="alertdialog" aria-labelledby="h-mission-lost" hidden>
+    <p class="disaster-kicker">RENDEZVOUS FAILURE // RESTORING SAVE POINT</p>
+    <h2 id="h-mission-lost">Courier lost</h2>
+    <p class="readout" id="mission-lost-reason"></p>
+    <p>Mission control restores the last save point: the courier plan. Your measured ship speed and colony speed are kept, and this attempt is logged in the mission data. Recheck the signs and frames of u&prime; and u&Prime;, then launch again.</p>
+    <button type="button" id="mission-reload" class="primary">Return to probe control</button>
+  </section>
+
+  <!-- Summary Debrief -->
+  <section class="card" id="s-summary" aria-labelledby="h-summary" hidden>
+    <h2 id="h-summary">Mission Complete: Flight Telemetry Certified</h2>
+    <p class="readout big" id="r-summary-title">CARGO DOCKED &middot; ORBITAL RENDEZVOUS CONFIRMED</p>
+    <p class="readout" id="r-summary-body"></p>
+    <p>Download the complete mission data and include it in your lab report. It contains section counts, fit results, recorded spectra, wavelengths and courier attempts for your tables, plots and uncertainty analysis.</p>
+    <div class="buttons">
+      <button type="button" id="btn-export-all" class="primary">Download complete mission data (CSV)</button>
+      <button type="button" id="btn-restart">Restart New Expedition</button>
+    </div>
+  </section>
+</main>
+
+<!-- Walk-through callout used in the briefing -->
+<div id="coach" class="coach" role="status" aria-live="polite" hidden>
+  <p class="coach-text" id="coach-text"></p>
+  <div class="coach-actions">
+    <span class="coach-count" id="coach-count"></span>
+    <button type="button" id="coach-skip" class="coach-skip">Skip</button>
+    <button type="button" id="coach-next" class="primary">Next</button>
+  </div>
+  <span class="coach-arrow" id="coach-arrow" aria-hidden="true"></span>
+</div>
+
+<div id="diagnostic-windows" class="diagnostic-windows" aria-hidden="true" hidden></div>
+<div id="sys-alerts" class="sys-alerts" aria-live="assertive"></div>
+
+<!-- Slide-Over Flight Operations & Physics Instruction Drawer -->
+<div id="drawer-backdrop" class="drawer-backdrop" hidden></div>
+<aside id="instruction-drawer" class="instruction-drawer" aria-label="Flight Operations Manual" hidden>
+  <div class="drawer-header">
+    <div class="drawer-title-group">
+      <span class="drawer-badge">FLIGHT OPS MANUAL</span>
+      <h2 id="drawer-title">Station Guide &amp; Physics</h2>
+    </div>
+    <button type="button" id="drawer-close-btn" class="drawer-close-btn" aria-label="Close manual [Esc]">&times;</button>
+  </div>
+  <div class="drawer-body" id="drawer-body"></div>
+</aside>
+
+<!-- Emergency Terminal Modal -->
+<div id="glitch-modal" class="modal-backdrop" hidden>
+  <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-header">
+      <div class="glitch-title">
+        <span class="glitch-dot"></span>
+        <span id="modal-title">NAV-SYS CORE v4.19.0 // INERTIAL SPEED SOLVER</span>
+      </div>
+      <button type="button" class="modal-close" id="modal-close-btn" aria-label="Close terminal">&times;</button>
+    </div>
+    <div class="modal-body" id="modal-terminal-log">
+      <p class="term-line">operator@nav:~$ nav-solve --source muon-bore</p>
+      <p class="term-line">> SAMPLING ICE-PROW DETECTOR BORE: 12/12 SECTIONS ONLINE</p>
+      <p class="term-line" id="m-log-fit">> FIT DECAY LENGTH: L = &ndash; m</p>
+      <p class="term-line">> PROPER MUON REST LIFETIME: c&tau;₀ = 658.65 m (&tau;₀ = 2.197 &micro;s)</p>
+      <div class="term-calc">
+        <p class="term-line">nav-solve: loading legacy inversion module...</p>
+        <p class="term-line" id="m-log-newton">> NAIVE INVERSION: v/c = L/(c&tau;₀) = &ndash;</p>
+      </div>
+      <p class="term-line term-err" id="m-log-err">nav-solve: ERROR 0x7E: result exceeds light speed; rejected</p>
+      <p class="term-line">nav-solve: retry 1/2 -- reloading solver...</p>
+      <p class="term-line term-err">nav-solve: ERROR 0x7E: invalid velocity; result rejected</p>
+      <p class="term-line">nav-solve: retry 2/2 -- switching to backup inversion...</p>
+      <p class="term-line term-err">nav-solve: ERROR: backup inversion unavailable</p>
+      <p class="term-line term-err">nav-solve: failed after 3 attempts (exit status 1). Manual calculation required.</p>
+      <p class="term-line">diagnostics: detector data intact · tracing solver paths...</p>
+      <p class="term-line term-err">diagnostics: relativistic correction core unresponsive</p>
+      <p class="term-line">diagnostics: searching isolated operator controls...</p>
+      <p class="term-line term-hi">diagnostics: manual override channel available · awaiting operator</p>
+      <div class="term-manual">
+      <p class="term-line" style="margin-top:.8rem"><strong class="term-hi">OPERATOR MANUAL OVERRIDE REQUIRED:</strong></p>
+      <p class="term-line">Muons undergo relativistic time dilation in the ship frame (&tau;<sub>obs</sub> = &gamma;&middot;&tau;₀). Therefore, observed decay length is:</p>
+      <p class="term-line term-hi" style="text-align:center">L = &beta;&gamma;c&tau;₀ = [&beta; / &radic;(1 &minus; &beta;&sup2;)] &middot; (c&tau;₀)</p>
+      <p class="term-line">Use the fitted L and the muon lifetime to determine &beta;; consult your lab materials if needed.</p>
+      </div>
+    </div>
+    <div class="modal-input-card">
+      <label for="modal-beta-input">ENTER CALCULATED RELATIVISTIC VELOCITY (&beta; = v/c):</label>
+      <div class="calc-input-row">
+        <input type="number" id="modal-beta-input" step="0.001" min="0.01" max="0.999" placeholder="0.000" aria-label="Enter calculated beta">
+        <button type="button" id="modal-submit-btn" class="primary">Verify &amp; Override</button>
+      </div>
+      <p class="term-feedback" id="modal-feedback" aria-live="polite"></p>
+    </div>
+    <div class="modal-footer">
+      <button type="button" id="modal-skip-btn">Skip run</button>
+      <button type="button" id="modal-inspect-btn">Close Terminal (Inspect Data)</button>
+    </div>
+  </div>
+</div>
+
+<div id="star-solver-modal" class="modal-backdrop" hidden>
+  <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="star-solver-title">
+    <div class="modal-header"><strong id="star-solver-title">NAV-SYS // STARLIGHT SOLVER</strong><button type="button" id="star-solver-close" aria-label="Close starlight solver">&times;</button></div>
+    <div class="modal-body">
+      <p class="term-line">starlight-solve: loading calibrated spectra...</p>
+      <p class="term-line term-err">ERROR: automatic Doppler inversion unavailable. Manual speed calculation required.</p>
+      <p class="term-line">DIAGNOSTICS // Spectrograph data present. Cross-checking solver pathways...</p>
+      <p class="term-line term-err">RELATIVISTIC CORRECTION CORE: no response to second independent solver.</p>
+      <p class="term-line">Fault confidence increased: correction core likely failed. Manual channel available.</p>
+      <div id="star-manual" hidden><p id="star-solver-data" class="readout"></p>
+      <p>For each reading, use &lambda;/&lambda;₀ = &gamma;(1 &minus; &beta; cos &theta;), with &lambda;₀ = 656.28 nm and &gamma; = 1/&radic;(1 &minus; &beta;²). Use both readings to choose a consistent speed.</p>
+      <div class="calc-input-row"><label for="star-beta-input">Calculated &beta;</label><input type="number" id="star-beta-input" min="0.01" max="0.999" step="0.001"><button type="button" id="star-beta-submit" class="primary">Verify speed</button></div>
+      <p id="star-beta-feedback" class="readout" aria-live="polite"></p>
+      </div>
+      <button type="button" id="star-solver-skip">Skip run</button>
+    </div>
+  </div>
+</div>
+
+<dialog id="skip" aria-labelledby="h-skip">
+  <h2 id="h-skip">Depart without a calibration?</h2>
+  <p>Your sensor sections differ in sensitivity. Without a stored calibration, your measured speed will be biased, and the shuttle may miss its dock.</p>
+  <div class="buttons">
+    <button type="button" id="skip-back" class="primary">Go back and calibrate</button>
+    <button type="button" id="skip-go">Depart uncalibrated</button>
+  </div>
+</dialog>
+
+<div id="status" class="vh" role="status" aria-live="polite"></div>
+<div id="coach-scene-marker" class="coach-scene-marker" aria-hidden="true" hidden></div>
+<p id="nogl" class="nogl" hidden>3D graphics are not available on this computer. Every reading below still works.</p>
+
+<script src="vendor/three-bundle.js"></script>
+<script src="js/physics.js"></script>
+<script src="js/rng.js"></script>
+<script src="js/muonlab.js"></script>
+<script src="js/hydrogen.js"></script>
+<script src="js/spectrolab.js"></script>
+<script src="js/textures.js"></script>
+<script src="js/lighthugger-mesh.js"></script>
+<script src="js/oneill-mesh.js"></script>
+<script src="js/mission.js"></script>
+</body>
+</html>
+

@@ -1,0 +1,5 @@
+node_modules/
+.wrangler/
+_visual_review/
+*.mp4
+.DS_Store

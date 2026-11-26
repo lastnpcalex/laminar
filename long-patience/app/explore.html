@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="amber">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dead Reckoning: Explore Relativity</title>
+<meta name="description" content="Move the ship's speed and watch clocks, rulers, starlight, speeds and muons change.">
+<meta name="robots" content="noindex">
+<link rel="stylesheet" href="css/console.css">
+<link rel="stylesheet" href="css/explore.css">
+</head>
+<body>
+<a class="skip" href="#beta">Skip to the speed control</a>
+
+<header class="topbar explore-top">
+  <h1><span class="title-main">DEAD RECKONING</span> <span class="title-sub">Explore relativity</span></h1>
+  <div class="speed">
+    <label for="beta">Ship speed &beta;</label>
+    <input id="beta" type="range" min="0" max="0.95" step="0.01" value="0.66">
+    <output id="beta-out" for="beta">0.66</output>
+    <output id="gamma-out" class="gamma">&gamma; = 1.33</output>
+  </div>
+</header>
+
+<main id="explore-root" class="grid">
+
+  <p id="gl-note" class="gl-note" hidden>3D graphics are not available on this computer. The numbers below still work.</p>
+
+  <section class="card" aria-labelledby="h-clocks">
+    <h2 id="h-clocks">Moving clocks and rulers</h2>
+    <p class="cap">Seen from the station, a moving ship looks shorter and its clock runs slow.</p>
+    <div class="screen">
+      <canvas id="scene-clocks" role="img" aria-label="Two clocks, one on the station and one on the ship, and a ship drawn shorter than its length at rest. The readout below gives the numbers."></canvas>
+      <div class="labels" id="labels-clocks"></div>
+    </div>
+    <output id="read-clocks" class="readout"></output>
+  </section>
+
+  <section class="card" aria-labelledby="h-light">
+    <h2 id="h-light">Starlight</h2>
+    <div class="ctl">
+      <label for="light-view">Show</label>
+      <select id="light-view">
+        <option value="ahead">The sky, straight ahead</option>
+        <option value="behind">The sky, straight behind</option>
+        <option value="spectrum">The spectrum of hydrogen</option>
+      </select>
+    </div>
+    <p class="cap">Light from ahead shifts toward blue. Light from behind shifts toward red.</p>
+    <div class="screen">
+      <canvas id="scene-light" role="img" aria-label="The sky the crew sees, or hydrogen lines in starlight from ahead, at rest and from behind. The readout below gives the numbers."></canvas>
+      <div class="labels" id="labels-light"></div>
+    </div>
+    <output id="read-light" class="readout"></output>
+  </section>
+
+  <section class="card" aria-labelledby="h-speed">
+    <h2 id="h-speed">Speed limit</h2>
+    <p class="cap">Speeds never add up past the speed of light.</p>
+    <div class="screen">
+      <canvas id="scene-speed" role="img" aria-label="Three speed arrows on a line from minus c to plus c: the ship, a pod added the simple way, and the pod's speed in the relativistic answer. The readout below gives the numbers."></canvas>
+      <div class="labels" id="labels-speed"></div>
+    </div>
+    <div class="ctl">
+      <label for="pod">Pod speed relative to the ship</label>
+      <input id="pod" type="range" min="-0.99" max="0.99" step="0.01" value="0.5">
+      <output id="pod-out">0.50c</output>
+    </div>
+    <output id="read-speed" class="readout"></output>
+  </section>
+
+  <section class="card" aria-labelledby="h-muons">
+    <h2 id="h-muons">Muon channel</h2>
+    <p class="cap">Fast muons travel farther before they decay, so more of them reach the far counters.</p>
+    <div class="screen">
+      <canvas id="scene-muons" role="img" aria-label="Muons flying through a light-hugger ice shield past five counters. Bars show the fraction that reach each counter, and a dashed curve gives the prediction. The readout below gives the numbers."></canvas>
+      <div class="labels" id="labels-muons"></div>
+    </div>
+    <div class="row">
+      <button type="button" id="fire">Fire 100 muons</button>
+      <button type="button" id="clear">Clear counts</button>
+    </div>
+    <output id="read-muons" class="readout"></output>
+  </section>
+
+</main>
+
+<footer class="footer">
+  <p>Dead Reckoning, explore version 1 &middot; Code MIT &middot; Text and art CC BY-SA 4.0 &middot; Works offline.</p>
+</footer>
+
+<script src="js/physics.js"></script>
+<script src="js/hydrogen.js"></script>
+<script src="js/rng.js"></script>
+<script src="js/explore.js"></script>
+<script src="js/gl3d.js"></script>
+<script src="js/explore3d.js"></script>
+</body>
+</html>

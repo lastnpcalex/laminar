@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="amber">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dead Reckoning: Relativity Navigation Lab</title>
+<meta name="description" content="A browser-based special relativity lab: measure your ship's speed with a muon channel and a spectrograph, then dock a cargo pod.">
+<meta name="robots" content="noindex">
+<link rel="stylesheet" href="css/console.css">
+</head>
+<body>
+<a class="skip" href="#term-input">Skip to terminal</a>
+
+<header class="topbar">
+  <h1><span class="title-main">DEAD RECKONING</span> <span class="title-sub">Navigation recovery console</span></h1>
+  <p class="team" id="team-display" hidden>Team code <strong id="team-code"></strong></p>
+  <details class="glossary-box">
+    <summary>Glossary</summary>
+    <dl id="glossary" class="glossary"></dl>
+  </details>
+  <details class="settings">
+    <summary>Display settings</summary>
+    <form id="settings" class="settings-body">
+      <fieldset>
+        <legend>Layout</legend>
+        <label><input type="radio" name="layout" value="both" checked> Panel and terminal</label>
+        <label><input type="radio" name="layout" value="terminal"> Terminal only</label>
+        <label><input type="radio" name="layout" value="panel"> Panel only</label>
+      </fieldset>
+      <fieldset>
+        <legend>Color theme</legend>
+        <label><input type="radio" name="theme" value="amber" checked> Amber</label>
+        <label><input type="radio" name="theme" value="green"> Green</label>
+        <label><input type="radio" name="theme" value="contrast"> High contrast</label>
+        <label><input type="radio" name="theme" value="light"> Light</label>
+      </fieldset>
+      <fieldset>
+        <legend>Text size</legend>
+        <label><input type="radio" name="size" value="100" checked> Normal</label>
+        <label><input type="radio" name="size" value="125"> Large</label>
+        <label><input type="radio" name="size" value="150"> Larger</label>
+      </fieldset>
+      <fieldset>
+        <legend>Effects</legend>
+        <label><input type="checkbox" name="view3d"> Show the sky view</label>
+        <label><input type="checkbox" name="crt"> Screen texture (static scanlines, no flicker)</label>
+      </fieldset>
+    </form>
+  </details>
+</header>
+
+<main id="console" class="console layout-both">
+
+  <!-- Sky view -->
+  <section class="bezel viewscreen" id="viewscreen" aria-labelledby="h-view">
+    <h2 id="h-view">Sky view</h2>
+    <div class="view-controls">
+      <label for="view-mode">Look</label>
+      <select id="view-mode">
+        <option value="bow">Straight ahead (direction of travel)</option>
+        <option value="stern">Straight behind</option>
+        <option value="rest">Ship at rest (for comparison)</option>
+      </select>
+    </div>
+    <div class="screen">
+      <canvas id="view-canvas" width="800" height="450" role="img" aria-labelledby="view-summary"></canvas>
+      <canvas id="view-overlay" aria-hidden="true"></canvas>
+    </div>
+    <p id="view-summary" class="view-summary">Loading the sky view.</p>
+    <p class="hint" data-caption="sky"></p>
+  </section>
+
+  <!-- Station panel -->
+  <section class="bezel stations" id="stations" aria-labelledby="h-stations">
+    <h2 id="h-stations" class="visually-hidden">Instrument stations</h2>
+
+    <div id="start" class="start">
+      <h2>Mission briefing</h2>
+      <div id="intro-top"></div>
+      <form id="start-form" class="start-form" novalidate>
+        <label for="code-input">Team code</label>
+        <input id="code-input" name="code" autocomplete="off" spellcheck="false" placeholder="e.g. K7Q-4MX9" aria-describedby="code-help code-error">
+        <button type="submit">Start mission</button>
+        <button type="button" id="practice-code">Use a practice code</button>
+        <p id="code-help" class="hint">Your instructor gives each team a code. Every team's ship has a different speed.</p>
+        <p id="code-error" class="error" role="alert"></p>
+      </form>
+      <p id="resume" hidden><button type="button" id="resume-btn"></button></p>
+      <div id="intro-more"></div>
+    </div>
+
+    <div id="station-area" hidden>
+      <nav aria-label="Stations" class="station-nav">
+        <button type="button" data-station="muon" aria-current="true">1 &middot; Muon channel</button>
+        <button type="button" data-station="spectro">2 &middot; Spectrograph</button>
+        <button type="button" data-station="dock">3 &middot; Pod launch</button>
+        <button type="button" class="export" data-cmd="export">Export data</button>
+      </nav>
+
+      <!-- Station 1 -->
+      <section id="st-muon" class="station" aria-labelledby="h-muon">
+        <h2 id="h-muon">Station 1 &middot; Muon flight channel</h2>
+        <div class="explain-slot" data-explain="muon"></div>
+
+        <div class="subpanel">
+          <h3>Calibration A &middot; muon lifetime <span class="lamp" id="lamp-lifetime" data-state="off">not done</span></h3>
+          <p class="hint">Muons stopped in the calibration target decay at rest in the ship. Fit their decay times to check that your timing and fit recover the known lifetime, 2.197 &mu;s.</p>
+          <div class="row">
+            <label for="lt-time">Recording time</label>
+            <select id="lt-time"><option value="10">10 s</option><option value="60" selected>60 s</option><option value="300">300 s</option></select>
+            <button type="button" data-cmd="calibrate lifetime {lt-time}">Record decays</button>
+            <button type="button" data-cmd="fit lifetime">Fit lifetime</button>
+          </div>
+          <output id="lt-readout" class="readout" for="lt-time"></output>
+          <figure>
+            <svg id="lt-plot" class="plot" role="img" aria-labelledby="lt-cap"></svg>
+            <figcaption id="lt-cap" data-caption="lifetime"></figcaption>
+          </figure>
+          <details><summary>Lifetime data table</summary><div id="lt-table"></div></details>
+        </div>
+
+        <div class="subpanel">
+          <h3>Calibration B &middot; counter efficiency <span class="lamp" id="lamp-colocate" data-state="off">not done</span></h3>
+          <p class="hint">Counter 2 is moved beside counter 1 so both see the same muons. The ratio N2/N1 is counter 2's efficiency relative to counter 1. Counters 3 to 5 match counter 2.</p>
+          <div class="row">
+            <label for="co-time">Recording time</label>
+            <select id="co-time"><option value="10">10 s</option><option value="60" selected>60 s</option><option value="300">300 s</option></select>
+            <button type="button" data-cmd="calibrate colocate {co-time}">Record co-located counts</button>
+          </div>
+          <output id="co-readout" class="readout"></output>
+        </div>
+
+        <div class="subpanel">
+          <h3>Channel measurement <span class="lamp" id="lamp-channel" data-state="off">locked</span></h3>
+          <figure>
+            <svg id="channel-diagram" class="diagram" role="img" aria-labelledby="ch-cap" viewBox="0 0 640 108"></svg>
+            <figcaption id="ch-cap" data-caption="channel"></figcaption>
+          </figure>
+          <div class="row">
+            <label for="ct-time">Counting time</label>
+            <select id="ct-time"><option value="10">10 s</option><option value="60" selected>60 s</option><option value="300">300 s</option></select>
+            <button type="button" data-cmd="count {ct-time}" id="count-btn">Count muons</button>
+            <button type="button" data-cmd="fit counts">Fit ln N vs position</button>
+          </div>
+          <output id="ct-readout" class="readout"></output>
+          <figure>
+            <svg id="ct-plot" class="plot" role="img" aria-labelledby="ct-cap"></svg>
+            <figcaption id="ct-cap" data-caption="counts"></figcaption>
+          </figure>
+          <div id="ct-table"></div>
+        </div>
+      </section>
+
+      <!-- Station 2 -->
+      <section id="st-spectro" class="station" aria-labelledby="h-spectro" hidden>
+        <h2 id="h-spectro">Station 2 &middot; Spectrograph</h2>
+        <div class="explain-slot" data-explain="spectro"></div>
+
+        <div class="subpanel">
+          <h3>Calibration &middot; hydrogen lamp <span class="lamp" id="lamp-cal" data-state="off">not passed</span></h3>
+          <div class="row">
+            <button type="button" data-cmd="lamp">Record lamp spectrum</button>
+          </div>
+          <figure>
+            <svg id="lamp-plot" class="plot spectrum" role="img" aria-labelledby="lamp-cap"></svg>
+            <figcaption id="lamp-cap" data-caption="lamp"></figcaption>
+          </figure>
+          <p class="hint">Match peaks to hydrogen lines. Hint: the strongest line of each series is its alpha line, and lines crowd together toward each series limit.</p>
+          <div id="lamp-assign"></div>
+          <div class="row">
+            <fieldset class="inline">
+              <legend>Fit type</legend>
+              <label><input type="radio" name="cal-order" value="linear" checked> Linear</label>
+              <label><input type="radio" name="cal-order" value="quadratic"> Quadratic</label>
+            </fieldset>
+            <button type="button" data-cmd="fit calibration {cal-order}">Fit calibration</button>
+          </div>
+          <output id="cal-readout" class="readout"></output>
+          <p class="hint" data-caption="calibration"></p>
+          <div id="cal-table"></div>
+          <details><summary>Hydrogen line list (rest wavelengths, vacuum)</summary><div id="line-list"></div></details>
+        </div>
+
+        <div class="subpanel">
+          <h3>Starlight <span class="lamp" id="lamp-point" data-state="off">locked</span></h3>
+          <div class="row">
+            <label for="star-select">Target</label>
+            <select id="star-select"></select>
+            <button type="button" data-cmd="point {star-select}" id="point-btn">Record spectrum</button>
+          </div>
+          <output id="star-readout" class="readout"></output>
+          <figure>
+            <svg id="star-plot" class="plot spectrum" role="img" aria-labelledby="star-cap"></svg>
+            <figcaption id="star-cap" data-caption="star"></figcaption>
+          </figure>
+          <div id="star-table"></div>
+        </div>
+      </section>
+
+      <!-- Station 3 -->
+      <section id="st-dock" class="station" aria-labelledby="h-dock" hidden>
+        <h2 id="h-dock">Station 3 &middot; Pod launch</h2>
+        <div class="explain-slot" data-explain="dock"></div>
+
+        <div class="subpanel">
+          <h3>Platform beacon</h3>
+          <output id="dock-beacon" class="readout big"></output>
+        </div>
+        <div class="subpanel">
+          <h3>Launch control <span class="lamp" id="lamp-dock" data-state="off">ready</span></h3>
+          <form id="launch-form" class="row" novalidate>
+            <label for="launch-speed">Launch speed relative to the ship (fraction of c; + toward bow, &minus; toward stern)</label>
+            <input id="launch-speed" type="number" step="any" min="-0.9999" max="0.9999" inputmode="decimal" aria-describedby="launch-help">
+            <button type="submit">Launch pod</button>
+          </form>
+          <p id="launch-help" class="hint">Use your own measured ship speed. You have three pods.</p>
+          <figure>
+            <svg id="dock-gauge" class="diagram gauge" role="img" aria-label="Docking gauge. No launch yet." viewBox="0 0 640 124"></svg>
+            <figcaption data-caption="gauge"></figcaption>
+          </figure>
+          <output id="dock-readout" class="readout"></output>
+          <div id="dock-table"></div>
+        </div>
+      </section>
+    </div>
+  </section>
+
+  <!-- Terminal -->
+  <section class="bezel terminal" id="terminal" aria-labelledby="h-term">
+    <h2 id="h-term">Terminal</h2>
+    <div id="term-log" class="term-log" tabindex="0" aria-label="Terminal output (newest at the bottom)"></div>
+    <form id="term-form" class="term-form" autocomplete="off">
+      <label for="term-input" class="prompt">Command</label>
+      <input id="term-input" spellcheck="false" autocapitalize="off" aria-describedby="term-hint">
+      <button type="submit">Run</button>
+    </form>
+    <p id="term-hint" class="hint">Type help for commands, or about to read what this lab is. Up and down arrows recall earlier commands.</p>
+  </section>
+</main>
+
+<div id="announce" class="visually-hidden" role="status" aria-live="polite"></div>
+
+<footer class="footer">
+  <p>Dead Reckoning, version 1.1 &middot; Code MIT &middot; Text and art CC BY-SA 4.0 &middot; Works offline; no data leaves this computer except files you export.</p>
+</footer>
+
+<script src="js/physics.js"></script>
+<script src="js/rng.js"></script>
+<script src="js/hydrogen.js"></script>
+<script src="js/text.js"></script>
+<script src="js/lab.js"></script>
+<script src="js/plots.js"></script>
+<script src="js/view3d.js"></script>
+<script src="js/ui.js"></script>
+</body>
+</html>

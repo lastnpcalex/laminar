@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lighthugger Console &amp; 3Dconnexion Puck Study</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Share+Tech+Mono&family=VT323&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../shared/css/acidburn.css">
+  <style>
+    /* Scoped study styles: Knight KG-2100 UV-purple chassis + P1 green phosphor CRT + smooth 3Dconnexion puck */
+    :root {
+      --uv-chassis: #0c0918;
+      --uv-panel: #120d24;
+      --uv-bezel: #7368b8;
+      --uv-bezel-hi: #a99ff0;
+      --uv-silk: #9e93dc;
+      --p1-core: #6dff8e;
+      --p1-bright: #baffca;
+      --p1-mid: #1ee05a;
+      --p1-dim: rgba(46, 230, 104, 0.26);
+      --p1-tube-bg: #04190c;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at 28% 18%, rgba(124, 58, 237, 0.24), transparent 52%),
+        radial-gradient(circle at 76% 80%, rgba(30, 224, 90, 0.09), transparent 46%),
+        #05030b;
+      color: #d8d0f5;
+      font-family: 'Share Tech Mono', monospace;
+      display: grid;
+      place-items: center;
+      padding: 18px;
+      box-sizing: border-box;
+    }
+
+    .study-frame {
+      width: min(1040px, 100%);
+      background:
+        linear-gradient(165deg, rgba(145, 118, 235, 0.14) 0%, rgba(16, 12, 31, 0.97) 26%, rgba(9, 7, 19, 0.99) 100%);
+      border: 2px solid rgba(148, 126, 224, 0.52);
+      border-radius: 14px;
+      box-shadow:
+        inset 0 0 0 2px rgba(28, 20, 52, 0.95),
+        inset 0 18px 44px rgba(125, 76, 255, 0.14),
+        0 24px 60px rgba(0, 0, 0, 0.88);
+      padding: 18px 20px 20px;
+    }
+
+    .chassis-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding-bottom: 12px;
+      margin-bottom: 16px;
+      border-bottom: 1px solid rgba(158, 147, 220, 0.28);
+    }
+
+    .badge-plate {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 4px 10px;
+      border: 1px solid rgba(169, 159, 240, 0.55);
+      background: rgba(34, 24, 68, 0.7);
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.72rem;
+      letter-spacing: 0.18em;
+      color: #cfc6ff;
+    }
+
+    .pilot-lamp {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.7rem;
+      letter-spacing: 0.16em;
+      color: var(--uv-silk);
+    }
+
+    .pilot-jewel {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 36% 34%, #ffb199, #ff2f19 55%, #5e0800 100%);
+      box-shadow: 0 0 10px rgba(255, 52, 28, 0.9), 0 0 22px rgba(255, 52, 28, 0.45);
+      border: 1px solid rgba(255, 180, 160, 0.45);
+    }
+
+    .deck-grid {
+      display: grid;
+      grid-template-columns: 300px minmax(0, 1fr) 230px;
+      gap: 18px;
+      align-items: stretch;
+    }
+
+    /* Left: Knight KG-2100 style square lavender-UV bezel + 4 corner thumbscrew posts + round P1 phosphor CRT */
+    .crt-bezel {
+      position: relative;
+      background: linear-gradient(160deg, #6d62b5 0%, #4d438c 52%, #352d68 100%);
+      border: 1px solid rgba(202, 192, 255, 0.55);
+      border-radius: 8px;
+      padding: 20px;
+      display: grid;
+      place-items: center;
+      box-shadow:
+        inset 0 2px 6px rgba(225, 215, 255, 0.35),
+        inset 0 -8px 18px rgba(14, 9, 32, 0.75),
+        0 10px 26px rgba(0, 0, 0, 0.7);
+    }
+
+    .post-screw {
+      position: absolute;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: conic-gradient(from 35deg, #8b82c9, #cfc8ff, #544b8f, #aba2eb, #8b82c9);
+      border: 1px solid rgba(24, 18, 48, 0.85);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.65), inset 0 1px 2px rgba(255, 255, 255, 0.45);
+    }
+    .post-screw.tl { top: 8px; left: 8px; }
+    .post-screw.tr { top: 8px; right: 8px; }
+    .post-screw.bl { bottom: 8px; left: 8px; }
+    .post-screw.br { bottom: 8px; right: 8px; }
+
+    .crt-well {
+      width: 236px;
+      height: 236px;
+      border-radius: 50%;
+      padding: 8px;
+      background: radial-gradient(circle at 50% 50%, #062814 0%, #03150a 74%, #010904 100%);
+      border: 4px solid #1c1638;
+      box-shadow:
+        inset 0 0 36px rgba(30, 224, 90, 0.32),
+        inset 0 8px 18px rgba(0, 0, 0, 0.9),
+        0 0 22px rgba(57, 255, 122, 0.16);
+      position: relative;
+      overflow: hidden;
+    }
+
+    #scope-canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      border-radius: 50%;
+    }
+
+    /* Center: Grim Futuristic Electroluminescent Relativistic Nav Computer */
+    .el-bay {
+      background: rgba(7, 13, 12, 0.92);
+      border: 1px solid rgba(93, 255, 158, 0.36);
+      border-radius: 6px;
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 12px;
+      box-shadow:
+        inset 0 0 28px rgba(30, 224, 90, 0.08),
+        0 0 18px rgba(120, 68, 255, 0.12);
+    }
+
+    .el-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(93, 255, 158, 0.24);
+      padding-bottom: 6px;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.72rem;
+      letter-spacing: 0.14em;
+      color: var(--p1-core);
+      text-shadow: 0 0 8px rgba(93, 255, 158, 0.45);
+    }
+
+    .el-readouts {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .el-cell {
+      padding: 8px 10px;
+      background: rgba(3, 22, 11, 0.78);
+      border: 1px solid rgba(93, 255, 158, 0.24);
+      border-left: 3px solid var(--p1-core);
+    }
+
+    .el-k {
+      display: block;
+      font-size: 0.64rem;
+      letter-spacing: 0.14em;
+      color: var(--uv-silk);
+    }
+
+    .el-v {
+      display: block;
+      margin-top: 3px;
+      font-size: 1rem;
+      color: var(--p1-bright);
+      text-shadow: 0 0 10px rgba(93, 255, 158, 0.55);
+    }
+
+    .el-sliders {
+      display: grid;
+      gap: 8px;
+    }
+
+    .el-row {
+      display: grid;
+      grid-template-columns: 112px minmax(0, 1fr) 68px;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.74rem;
+      color: #c9bff5;
+    }
+
+    .el-row input[type="range"] {
+      accent-color: #4aff88;
+      width: 100%;
+    }
+
+    .el-row output {
+      text-align: right;
+      color: var(--p1-core);
+    }
+
+    .mode-strip {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .el-btn {
+      flex: 1 1 auto;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.72rem;
+      letter-spacing: 0.1em;
+      padding: 6px 8px;
+      color: var(--p1-core);
+      background: rgba(6, 28, 15, 0.82);
+      border: 1px solid rgba(93, 255, 158, 0.36);
+      cursor: pointer;
+    }
+
+    .el-btn[aria-pressed="true"] {
+      background: rgba(30, 224, 90, 0.22);
+      color: #eafff0;
+      border-color: var(--p1-bright);
+      box-shadow: 0 0 12px rgba(93, 255, 158, 0.35);
+    }
+
+    /* Right: Panel-mounted 3Dconnexion SpaceNavigator (smooth anodized cap + color-consistent UV/EL ring) */
+    .puck-bay {
+      background: linear-gradient(180deg, rgba(24, 17, 46, 0.95), rgba(11, 8, 24, 0.98));
+      border: 1px solid rgba(158, 147, 220, 0.36);
+      border-radius: 8px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      box-shadow: inset 0 2px 12px rgba(0, 0, 0, 0.75);
+    }
+
+    .puck-title {
+      font-size: 0.66rem;
+      letter-spacing: 0.18em;
+      color: var(--uv-silk);
+      text-align: center;
+    }
+
+    .spacenav-well {
+      position: relative;
+      width: 136px;
+      height: 136px;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at 50% 35%, #2b2152 0%, #140e29 58%, #070510 100%);
+      border: 2px solid rgba(158, 147, 220, 0.45);
+      box-shadow:
+        inset 0 0 0 5px #0c0819,
+        inset 0 0 22px rgba(57, 255, 122, 0.22),
+        0 10px 24px rgba(0, 0, 0, 0.85);
+      touch-action: none;
+      user-select: none;
+    }
+
+    /* Smooth electroluminescent collar glow (replaces jagged conic-gradient grip teeth) */
+    .spacenav-ring {
+      position: absolute;
+      inset: 15px;
+      border-radius: 50%;
+      border: 1.5px solid rgba(93, 255, 158, 0.55);
+      box-shadow: 0 0 14px rgba(57, 255, 122, 0.35), inset 0 0 12px rgba(57, 255, 122, 0.2);
+      pointer-events: none;
+    }
+
+    .spacenav-puck {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 76px;
+      height: 76px;
+      margin: -38px 0 0 -38px;
+      border-radius: 50%;
+      cursor: grab;
+      touch-action: none;
+      background:
+        radial-gradient(circle at 36% 28%, #9e91e8 0%, #4b3e88 32%, #221a44 66%, #0e0a20 100%);
+      border: 1px solid rgba(196, 185, 255, 0.5);
+      box-shadow:
+        inset 0 2px 3px rgba(235, 228, 255, 0.55),
+        inset 0 -6px 12px rgba(5, 3, 12, 0.92),
+        0 8px 18px rgba(0, 0, 0, 0.88),
+        0 0 18px rgba(93, 255, 158, 0.2);
+      will-change: transform;
+    }
+
+    .spacenav-puck.is-active {
+      cursor: grabbing;
+      box-shadow:
+        inset 0 2px 4px rgba(235, 228, 255, 0.72),
+        inset 0 -6px 12px rgba(5, 3, 12, 0.95),
+        0 10px 22px rgba(0, 0, 0, 0.9),
+        0 0 26px rgba(93, 255, 158, 0.55);
+    }
+
+    /* Smooth spun-metal top cap */
+    .spacenav-cap {
+      position: absolute;
+      inset: 12px;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at 38% 32%, rgba(226, 219, 255, 0.42) 0%, rgba(110, 94, 184, 0.22) 48%, rgba(20, 14, 42, 0.65) 100%);
+      border: 1px solid rgba(176, 164, 240, 0.35);
+      pointer-events: none;
+    }
+
+    .puck-readout {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.68rem;
+      color: var(--p1-core);
+      padding-top: 6px;
+      border-top: 1px solid rgba(158, 147, 220, 0.22);
+    }
+
+    .study-note {
+      margin-top: 14px;
+      padding-top: 10px;
+      border-top: 1px solid rgba(158, 147, 220, 0.22);
+      font-size: 0.74rem;
+      color: #bdb2e8;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    @media (max-width: 900px) {
+      .deck-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <section class="study-frame" aria-label="Electroluminescent console aesthetic and puck prototype">
+    <div class="chassis-head">
+      <div class="badge-plate">
+        <span>[K]</span>
+        <span>KG-2100 // RELATIVISTIC HELM &amp; NAV-COMP</span>
+      </div>
+      <div class="pilot-lamp">
+        <span>DRYDOCK / HELM STAGING</span>
+        <span class="pilot-jewel" aria-hidden="true"></span>
+      </div>
+    </div>
+
+    <div class="deck-grid">
+      <!-- Oscilloscope CRT -->
+      <div class="crt-bezel">
+        <span class="post-screw tl" aria-hidden="true"></span>
+        <span class="post-screw tr" aria-hidden="true"></span>
+        <span class="post-screw bl" aria-hidden="true"></span>
+        <span class="post-screw br" aria-hidden="true"></span>
+        <div class="crt-well">
+          <canvas id="scope-canvas" width="440" height="440" aria-label="P1 green phosphor oscilloscope trace"></canvas>
+        </div>
+      </div>
+
+      <!-- Working Relativistic Nav Computer Preview -->
+      <div class="el-bay">
+        <div class="el-header">
+          <span>NAV-COMP // VELOCITY ADDITION ONLINE</span>
+          <span id="trace-label">TRACE: DOPPLER H-α</span>
+        </div>
+
+        <div class="el-readouts">
+          <div class="el-cell">
+            <span class="el-k">SHIP SPEED β · LORENTZ γ</span>
+            <span class="el-v" id="out-ship">0.820c · γ 1.747</span>
+          </div>
+          <div class="el-cell">
+            <span class="el-k">RAPIDITY η = artanh(β)</span>
+            <span class="el-v" id="out-eta">1.157 rad</span>
+          </div>
+          <div class="el-cell">
+            <span class="el-k">TARGET REST VELOCITY w</span>
+            <span class="el-v" id="out-target">+0.640c</span>
+          </div>
+          <div class="el-cell">
+            <span class="el-k">RELATIVISTIC Δu′ = (w−β)/(1−wβ)</span>
+            <span class="el-v" id="out-rel">-0.379c</span>
+          </div>
+        </div>
+
+        <div class="el-sliders">
+          <label class="el-row" for="rng-beta">
+            <span>SHIP β</span>
+            <input id="rng-beta" type="range" min="0.05" max="0.98" step="0.005" value="0.82">
+            <output id="val-beta">0.820c</output>
+          </label>
+          <label class="el-row" for="rng-w">
+            <span>TARGET w</span>
+            <input id="rng-w" type="range" min="-0.95" max="0.95" step="0.005" value="0.64">
+            <output id="val-w">+0.640c</output>
+          </label>
+        </div>
+
+        <div class="mode-strip" role="group" aria-label="Sextant and scope modes">
+          <button type="button" class="el-btn" data-mode="doppler" aria-pressed="true">SEXTANT: H-α SPEC</button>
+          <button type="button" class="el-btn" data-mode="muon" aria-pressed="false">MUON BORE</button>
+          <button type="button" class="el-btn" data-mode="lissajous" aria-pressed="false">INTERCEPT SYNC</button>
+        </div>
+      </div>
+
+      <!-- Panel-mounted Smooth 3Dconnexion Controller -->
+      <div class="puck-bay">
+        <div class="puck-title">3DCONNEXION HELM<br>SLEW / ORBIT PUCK</div>
+        <div class="spacenav-well" id="puck-well">
+          <div class="spacenav-ring" aria-hidden="true"></div>
+          <div class="spacenav-puck" id="puck-knob" tabindex="0" role="slider" aria-label="Smooth 3Dconnexion view and sextant controller">
+            <div class="spacenav-cap"></div>
+          </div>
+        </div>
+        <div class="puck-readout">
+          <span id="puck-axes">X +0.00 · Y +0.00</span>
+          <span id="puck-state">CENTERED</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="study-note">
+      <span>VIBE CHECK: UV-violet anodized faceplate · P1 green phosphor scope · smooth spring-damped 3Dconnexion cap</span>
+      <span>DRAG PUCK OR ADJUST β / w TO TEST</span>
+    </div>
+  </section>
+
+  <script>
+    (function () {
+      var canvas = document.getElementById('scope-canvas');
+      var ctx = canvas.getContext('2d');
+      var rngBeta = document.getElementById('rng-beta');
+      var rngW = document.getElementById('rng-w');
+      var mode = 'doppler';
+      var puck = { x: 0, y: 0, tx: 0, ty: 0, dragging: false };
+
+      function updateNav() {
+        var b = parseFloat(rngBeta.value);
+        var w = parseFloat(rngW.value);
+        var gamma = 1 / Math.sqrt((1 - b) * (1 + b));
+        var eta = Math.atanh(b);
+        var uRel = (w - b) / (1 - w * b);
+
+        document.getElementById('val-beta').textContent = b.toFixed(3) + 'c';
+        document.getElementById('val-w').textContent = (w >= 0 ? '+' : '') + w.toFixed(3) + 'c';
+        document.getElementById('out-ship').textContent = b.toFixed(3) + 'c · γ ' + gamma.toFixed(3);
+        document.getElementById('out-eta').textContent = eta.toFixed(3) + ' rad';
+        document.getElementById('out-target').textContent = (w >= 0 ? '+' : '') + w.toFixed(3) + 'c';
+        document.getElementById('out-rel').textContent = (uRel >= 0 ? '+' : '') + uRel.toFixed(3) + 'c';
+      }
+
+      rngBeta.addEventListener('input', updateNav);
+      rngW.addEventListener('input', updateNav);
+
+      Array.prototype.forEach.call(document.querySelectorAll('[data-mode]'), function (btn) {
+        btn.addEventListener('click', function () {
+          mode = btn.getAttribute('data-mode');
+          document.getElementById('trace-label').textContent =
+            mode === 'doppler' ? 'TRACE: DOPPLER H-α' :
+            mode === 'muon' ? 'TRACE: MUON SURVIVAL' : 'TRACE: PHASE LOCK';
+          Array.prototype.forEach.call(document.querySelectorAll('[data-mode]'), function (b) {
+            b.setAttribute('aria-pressed', b === btn ? 'true' : 'false');
+          });
+        });
+      });
+
+      // Smooth spring-damped 3Dconnexion puck
+      var well = document.getElementById('puck-well');
+      var knob = document.getElementById('puck-knob');
+      var ptr = null, cx = 0, cy = 0, REACH = 26;
+
+      function setTargetFromEvent(e) {
+        var dx = e.clientX - cx;
+        var dy = e.clientY - cy;
+        var d = Math.hypot(dx, dy);
+        if (d > REACH) { dx *= REACH / d; dy *= REACH / d; }
+        puck.tx = dx / REACH;
+        puck.ty = dy / REACH;
+      }
+
+      well.addEventListener('pointerdown', function (e) {
+        var r = well.getBoundingClientRect();
+        cx = r.left + r.width / 2;
+        cy = r.top + r.height / 2;
+        ptr = e.pointerId;
+        puck.dragging = true;
+        well.setPointerCapture(ptr);
+        knob.classList.add('is-active');
+        setTargetFromEvent(e);
+        e.preventDefault();
+      });
+      well.addEventListener('pointermove', function (e) {
+        if (ptr === e.pointerId) setTargetFromEvent(e);
+      });
+      function releasePuck() {
+        ptr = null;
+        puck.dragging = false;
+        puck.tx = 0;
+        puck.ty = 0;
+        knob.classList.remove('is-active');
+      }
+      well.addEventListener('pointerup', releasePuck);
+      well.addEventListener('pointercancel', releasePuck);
+
+      function drawGraticule(w, h) {
+        ctx.clearRect(0, 0, w, h);
+        ctx.strokeStyle = 'rgba(110, 255, 150, 0.22)';
+        ctx.lineWidth = 1;
+        var step = w / 8;
+        for (var i = 1; i < 8; i++) {
+          var p = i * step;
+          ctx.beginPath(); ctx.moveTo(p, 0); ctx.lineTo(p, h); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(0, p); ctx.lineTo(w, p); ctx.stroke();
+        }
+        // Center fine ticks like Knight KG-2100 graticule
+        ctx.strokeStyle = 'rgba(130, 255, 168, 0.42)';
+        var mid = w / 2;
+        for (var t = 0; t < w; t += step / 5) {
+          ctx.beginPath(); ctx.moveTo(t, mid - 5); ctx.lineTo(t, mid + 5); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(mid - 5, t); ctx.lineTo(mid + 5, t); ctx.stroke();
+        }
+      }
+
+      function frame(ts) {
+        // Critically-damped smooth interpolation for the 3Dconnexion puck
+        puck.x += (puck.tx - puck.x) * 0.22;
+        puck.y += (puck.ty - puck.y) * 0.22;
+        var px = puck.x * REACH;
+        var py = puck.y * REACH;
+        var tiltX = (-puck.y * 11).toFixed(2);
+        var tiltY = (puck.x * 11).toFixed(2);
+        knob.style.transform = 'perspective(260px) translate3d(' + px.toFixed(2) + 'px,' + py.toFixed(2) + 'px,0) rotateX(' + tiltX + 'deg) rotateY(' + tiltY + 'deg)';
+
+        document.getElementById('puck-axes').textContent =
+          'X ' + (puck.x >= 0 ? '+' : '') + puck.x.toFixed(2) + ' · Y ' + (-puck.y >= 0 ? '+' : '') + (-puck.y).toFixed(2);
+        document.getElementById('puck-state').textContent = puck.dragging ? 'SLEWING' : 'CENTERED';
+
+        var W = canvas.width, H = canvas.height;
+        drawGraticule(W, H);
+
+        var b = parseFloat(rngBeta.value);
+        var w = parseFloat(rngW.value);
+        var uRel = (w - b) / (1 - w * b);
+        var t = ts * 0.001;
+
+        ctx.save();
+        ctx.strokeStyle = '#5dff8e';
+        ctx.shadowColor = '#28ff6a';
+        ctx.shadowBlur = 16;
+        ctx.lineWidth = 2.6;
+        ctx.beginPath();
+
+        if (mode === 'doppler') {
+          var bowShift = Math.sqrt((1 - b) / (1 + b));
+          var sternShift = Math.sqrt((1 + b) / (1 - b));
+          var bowX = W * (0.18 + 0.28 * bowShift) + puck.x * 36;
+          var sternX = W * Math.min(0.88, 0.35 + 0.11 * sternShift) + puck.x * 36;
+          for (var x = 0; x <= W; x += 2) {
+            var base = H * 0.52 + puck.y * 34 + Math.sin(x * 0.09 + t * 9) * 1.4;
+            var dip1 = 92 * Math.exp(-Math.pow((x - bowX) / 11, 2));
+            var dip2 = 76 * Math.exp(-Math.pow((x - sternX) / 14, 2));
+            var y = base - dip1 + dip2 * 0.65;
+            if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+          }
+        } else if (mode === 'muon') {
+          var bg = b / Math.sqrt(1 - b * b);
+          for (var xm = 24; xm <= W - 24; xm += 3) {
+            var frac = (xm - 24) / (W - 48);
+            var surv = Math.exp(-frac * 1.82 / Math.max(0.15, bg));
+            var ym = H * 0.80 - surv * (H * 0.56) + puck.y * 24;
+            if (xm === 24) ctx.moveTo(xm, ym); else ctx.lineTo(xm, ym);
+          }
+        } else {
+          var detune = 1 + Math.abs(uRel) * 3.5;
+          for (var s = 0; s <= 240; s++) {
+            var ang = (s / 240) * Math.PI * 2;
+            var lx = W / 2 + Math.sin(ang * 2 + t * 1.8 + puck.x * 2) * (W * 0.32);
+            var ly = H / 2 + Math.sin(ang * 2 * detune + Math.PI / 2 + puck.y * 2) * (H * 0.32);
+            if (s === 0) ctx.moveTo(lx, ly); else ctx.lineTo(lx, ly);
+          }
+        }
+        ctx.stroke();
+
+        // Bright white-green phosphor core pass
+        ctx.strokeStyle = '#d8ffe3';
+        ctx.shadowBlur = 4;
+        ctx.lineWidth = 1.1;
+        ctx.stroke();
+        ctx.restore();
+
+        requestAnimationFrame(frame);
+      }
+
+      updateNav();
+      requestAnimationFrame(frame);
+    })();
+  </script>
+</body>
+</html>

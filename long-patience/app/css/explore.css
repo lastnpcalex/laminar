@@ -1,0 +1,30 @@
+/* Explore page: four 3D pictures in a grid, with one speed control above them. */
+.explore-top { justify-content: space-between; }
+.speed { display: flex; align-items: center; gap: .7rem; flex-wrap: wrap; font-weight: 700; }
+.speed input[type="range"] { width: min(360px, 60vw); accent-color: var(--fg); }
+.speed output { min-width: 3.4em; color: var(--accent); }
+.speed .gamma { color: var(--dim); }
+
+.grid { display: grid; gap: 1rem; padding: 1rem; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.gl-note { grid-column: 1 / -1; color: var(--bad); margin: 0; }
+@media (max-width: 900px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+
+.card { background: var(--panel); border: 2px solid var(--edge); border-radius: 10px; padding: .8rem .9rem 1rem; min-width: 0; }
+.card h2 { margin: 0 0 .25rem; }
+.cap { color: var(--dim); margin: .2rem 0 .6rem; }
+
+/* The picture: a 16:9 canvas with real text laid over it. */
+.screen { position: relative; border: 1px solid var(--edge); border-radius: 6px; overflow: hidden; background: #000; }
+.screen canvas { display: block; width: 100%; height: auto; }
+.labels { position: absolute; inset: 0; pointer-events: none; }
+.tag { position: absolute; transform: translate(-50%, -50%); white-space: nowrap;
+  font: 12px Consolas, "Cascadia Mono", "DejaVu Sans Mono", monospace; color: var(--accent);
+  text-shadow: 0 0 4px #000, 0 0 2px #000; }
+
+.readout { display: block; white-space: pre-wrap; color: var(--accent); margin-top: .5rem; min-height: 2.6em; }
+
+.ctl { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; margin-top: .7rem; }
+.ctl input[type="range"] { width: min(260px, 60vw); accent-color: var(--fg); }
+.ctl select { min-width: 14em; }
+.ctl output { min-width: 4em; color: var(--accent); }
+.row { display: flex; gap: .5rem; flex-wrap: wrap; margin-top: .7rem; }
